@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { PAGINATION_DEFAULT } from "@/lib/constants";
 import { checkActionPermission, getSessionUser } from "./auth.actions";
 import { createAuditLog } from "./audit.actions";

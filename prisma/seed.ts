@@ -1,6 +1,6 @@
 import { PrismaClient } from "../app/generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import "dotenv/config";
 
 const connectionString = process.env.DATABASE_URL;
