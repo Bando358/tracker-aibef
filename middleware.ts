@@ -41,6 +41,12 @@ function isPublicRoute(pathname: string): boolean {
   );
 }
 
+// Detecter le bon nom de cookie selon l'environnement
+const useSecureCookies = process.env.VERCEL === "1";
+const cookieName = useSecureCookies
+  ? "__Secure-next-auth.session-token"
+  : "next-auth.session-token";
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -51,6 +57,7 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET!,
+    cookieName,
   });
 
   if (!token) {
