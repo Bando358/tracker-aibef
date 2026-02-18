@@ -1,0 +1,399 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ======================== ENUMS ========================
+
+enum Role {
+  SUPER_ADMIN
+  RESPONSABLE_ANTENNE
+  ADMINISTRATIF
+  SOIGNANT
+}
+
+enum TypeActivite {
+  PONCTUELLE
+  PERIODIQUE
+}
+
+enum Frequence {
+  MENSUELLE
+  TRIMESTRIELLE
+  ANNUELLE
+}
+
+enum Periodicite {
+  LUNDI
+  MARDI
+  MERCREDI
+  JEUDI
+  VENDREDI
+  AVANT_JOUR_DU_MOIS
+}
+
+enum StatutActivite {
+  PLANIFIEE
+  EN_COURS
+  REALISEE
+  EN_RETARD
+  ANNULEE
+  REPROGRAMMEE
+}
+
+enum SourceRecommandation {
+  ACTIVITE
+  REUNION
+  SUPERVISION
+  FORMATION
+}
+
+enum TypeResolution {
+  PERMANENTE
+  PONCTUELLE
+  PERIODIQUE
+}
+
+enum StatutRecommandation {
+  EN_ATTENTE
+  EN_COURS
+  PARTIELLEMENT_REALISEE
+  RESOLUE
+  EN_RETARD
+  ANNULEE
+}
+
+enum Priorite {
+  HAUTE
+  MOYENNE
+  BASSE
+}
+
+enum TypeJournee {
+  FIXE
+  VARIABLE
+}
+
+enum StatutPointage {
+  PRESENT
+  ABSENT
+  RETARD
+  CONGE
+}
+
+enum TypeConge {
+  ANNUEL
+  MALADIE
+  MATERNITE
+  PATERNITE
+  EXCEPTIONNEL
+  SANS_SOLDE
+}
+
+enum StatutConge {
+  BROUILLON
+  SOUMIS
+  APPROUVE_RESPONSABLE
+  APPROUVE_FINAL
+  REFUSE
+  ANNULE
+}
+
+enum TypeNotification {
+  ACTIVITE_EN_RETARD
+  RECOMMANDATION_EN_RETARD
+  CONGE_SOUMIS
+  CONGE_APPROUVE
+  CONGE_REFUSE
+  ASSIGNATION_ACTIVITE
+  ASSIGNATION_RECOMMANDATION
+  RAPPEL_POINTAGE
+  SYSTEME
+}
+
+enum ActionAudit {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  APPROVE
+  REJECT
+  STATUS_CHANGE
+}
+
+// ======================== MODELS ========================
+
+model Antenne {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nom       String   @unique
+  code      String   @unique
+  region    String
+  ville     String
+  adresse   String?
+  telephone String?
+  email     String?
+  isActive  Boolean  @default(true)
+
+  employes          User[]
+  activiteAntennes  ActiviteAntenne[]
+  recommandations   Recommandation[]
+  projets           Projet[]
+
+  @@map("antennes")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nom       String
+  prenom    String
+  email     String   @unique
+  username  String   @unique
+  password  String
+  telephone String?
+  role      Role     @default(SOIGNANT)
+  isActive  Boolean  @default(true)
+  image     String?
+
+  antenneId String?
+  antenne   Antenne? @relation(fields: [antenneId], references: [id])
+
+  typeJournee    TypeJournee @default(FIXE)
+  heureDebutFixe String?     @default("08:00")
+  heureFinFixe   String?     @default("16:00")
+
+  pointages                    Pointage[]
+  congesDemandes               Conge[]                       @relation("CongeEmploye")
+  congesApprouves              Conge[]                       @relation("CongeApprobateur")
+  activiteAntennes             ActiviteAntenne[]             @relation("ResponsableActivite")
+  recommandationResponsables   RecommandationResponsable[]
+  notifications                Notification[]
+  auditLogs                    AuditLog[]
+  activitesCreees              Activite[]                    @relation("CreateurActivite")
+
+  @@map("users")
+}
+
+model Projet {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nom         String
+  description String?
+  dateDebut   DateTime
+  dateFin     DateTime?
+  isActive    Boolean  @default(true)
+
+  antenneId String?
+  antenne   Antenne? @relation(fields: [antenneId], references: [id])
+
+  activites Activite[]
+
+  @@map("projets")
+}
+
+model Activite {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  titre           String
+  description     String?
+  type            TypeActivite
+  frequence       Frequence?
+  periodicite     Periodicite?
+  jourPeriodicite Int?
+  statut          StatutActivite @default(PLANIFIEE)
+  dateDebut    DateTime?
+  dateFin      DateTime?
+  dateRealisee DateTime?
+  budget       Float?
+  observations String?
+
+  projetId   String?
+  projet     Projet?  @relation(fields: [projetId], references: [id])
+  createurId String
+  createur   User     @relation("CreateurActivite", fields: [createurId], references: [id])
+
+  activiteAntennes ActiviteAntenne[]
+  recommandations  Recommandation[]
+  historiques      ActiviteHistorique[]
+
+  @@map("activites")
+}
+
+model ActiviteAntenne {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activiteId    String
+  activite      Activite @relation(fields: [activiteId], references: [id], onDelete: Cascade)
+  antenneId     String
+  antenne       Antenne  @relation(fields: [antenneId], references: [id], onDelete: Cascade)
+  responsableId String
+  responsable   User     @relation("ResponsableActivite", fields: [responsableId], references: [id])
+
+  statut      StatutActivite @default(PLANIFIEE)
+  commentaire String?
+
+  @@unique([activiteId, antenneId])
+  @@map("activite_antennes")
+}
+
+model ActiviteHistorique {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  activiteId    String
+  activite      Activite       @relation(fields: [activiteId], references: [id], onDelete: Cascade)
+  ancienStatut  StatutActivite
+  nouveauStatut StatutActivite
+  commentaire   String?
+  modifiePar    String
+
+  @@map("activite_historiques")
+}
+
+model Recommandation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  titre          String
+  description    String
+  source         SourceRecommandation
+  typeResolution TypeResolution
+  statut         StatutRecommandation @default(EN_ATTENTE)
+  priorite       Priorite             @default(MOYENNE)
+  dateEcheance   DateTime
+  dateResolution DateTime?
+  frequence      Frequence?
+  observations   String?
+
+  activiteId String?
+  activite   Activite? @relation(fields: [activiteId], references: [id])
+  antenneId  String?
+  antenne    Antenne?  @relation(fields: [antenneId], references: [id])
+
+  responsables RecommandationResponsable[]
+  historiques  RecommandationHistorique[]
+
+  @@map("recommandations")
+}
+
+model RecommandationResponsable {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  recommandationId String
+  recommandation   Recommandation @relation(fields: [recommandationId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User           @relation(fields: [userId], references: [id])
+  isPrincipal      Boolean        @default(false)
+
+  @@unique([recommandationId, userId])
+  @@map("recommandation_responsables")
+}
+
+model RecommandationHistorique {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  recommandationId String
+  recommandation   Recommandation       @relation(fields: [recommandationId], references: [id], onDelete: Cascade)
+  ancienStatut     StatutRecommandation
+  nouveauStatut    StatutRecommandation
+  commentaire      String?
+  modifiePar       String
+
+  @@map("recommandation_historiques")
+}
+
+model Pointage {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  date          DateTime       @db.Date
+  heureArrivee  DateTime?
+  heureDepart   DateTime?
+  statut        StatutPointage @default(PRESENT)
+  retardMinutes Int            @default(0)
+  heuresSupp    Float          @default(0)
+  observations  String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("pointages")
+}
+
+model Conge {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  type                   TypeConge
+  statut                 StatutConge @default(BROUILLON)
+  dateDebut              DateTime
+  dateFin                DateTime
+  nbJours                Int
+  motif                  String
+  commentaireApprobateur String?
+
+  employeId     String
+  employe       User      @relation("CongeEmploye", fields: [employeId], references: [id])
+  approbateurId String?
+  approbateur   User?     @relation("CongeApprobateur", fields: [approbateurId], references: [id])
+  dateApprobation DateTime?
+
+  @@map("conges")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  type    TypeNotification
+  titre   String
+  message String
+  lue     Boolean @default(false)
+  lien    String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lue])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  action    ActionAudit
+  entite    String
+  entiteId  String?
+  details   String?
+  ipAddress String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([entite, entiteId])
+  @@index([userId])
+  @@map("audit_logs")
+}
