@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, Building2 } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 
 import { AntenneForm } from "@/components/antennes/antenne-form";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ export default function NouvelleAntennePage() {
             </Link>
           </Button>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
-            <Building2 className="h-6 w-6 text-white" />
+            <Image src="/logo-tracker.png" alt="" width={24} height={24} />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">

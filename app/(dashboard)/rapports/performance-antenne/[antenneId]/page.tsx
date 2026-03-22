@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2 } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 import { getSessionUser } from "@/lib/actions/auth.actions";
 import { fetchPerformanceAntenneDetail } from "@/lib/actions/rapport.actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +32,7 @@ export default async function PerformanceAntennePage({ params }: Props) {
             <Link href="/rapports"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
-            <Building2 className="h-6 w-6" />
+            <Image src="/logo-tracker.png" alt="" width={24} height={24} />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">Performance - {antenne.nom}</h1>

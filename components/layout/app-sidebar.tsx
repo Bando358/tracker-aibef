@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { PERMISSIONS, DEFAULT_PERMISSIONS } from "@/lib/constants";
 import {
   Sidebar,
@@ -28,7 +29,6 @@ import {
 import { NavUser } from "@/components/layout/nav-user";
 import {
   LayoutDashboard,
-  Building2,
   Users,
   Activity,
   ClipboardCheck,
@@ -46,6 +46,19 @@ import {
   GanttChart,
   KeyRound,
 } from "lucide-react";
+
+function LogoIcon({ className }: { className?: string }) {
+  return (
+    <Image
+      src="/logo-tracker.png"
+      alt=""
+      width={16}
+      height={16}
+      className={className}
+    />
+  );
+}
+
 interface NavItem {
   title: string;
   url: string;
@@ -66,7 +79,7 @@ const MAIN_ITEMS: NavItem[] = [
 ];
 
 const SETTINGS_ITEMS: NavItem[] = [
-  { title: "Antennes", url: "/antennes", icon: Building2, permission: "antennes" },
+  { title: "Antennes", url: "/antennes", icon: LogoIcon, permission: "antennes" },
   { title: "Employes", url: "/employes", icon: Users, permission: "employes" },
   { title: "Empreintes digitales", url: "/empreintes", icon: Fingerprint, permission: "empreintes" },
   { title: "Formations", url: "/formations", icon: GraduationCap, permission: "formations" },
@@ -108,16 +121,14 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <Link href="/dashboard" className="group flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/25 transition-transform duration-300 group-hover:scale-105">
-            <Building2 className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight">TRACKER-AIBEF</span>
-            <span className="text-[11px] text-sidebar-foreground/60">
-              Pilotage strategique
-            </span>
-          </div>
+        <Link href="/dashboard" className="group flex items-center justify-center">
+          <Image
+            src="/logo-tracker.png"
+            alt="TRACKER-AIBEF"
+            width={180}
+            height={40}
+            className="w-auto h-[55px] object-contain transition-transform duration-300 group-hover:scale-105"
+          />
         </Link>
       </SidebarHeader>
       <SidebarContent>

@@ -19,7 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Building2, Users, Activity, ClipboardCheck, BarChart3 } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, Users, Activity, ClipboardCheck, BarChart3 } from "lucide-react";
 import { ROLE_LABELS } from "@/lib/constants";
 
 export const dynamic = 'force-dynamic';
@@ -55,7 +56,7 @@ export default async function ModifierAntennePage({ params }: PageProps) {
             </Link>
           </Button>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
-            <Building2 className="h-6 w-6 text-white" />
+            <Image src="/logo-tracker.png" alt="" width={24} height={24} />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">

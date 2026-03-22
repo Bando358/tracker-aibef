@@ -22,7 +22,12 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { BarChart3, PieChart as PieChartIcon, TrendingUp, Building2 } from "lucide-react";
+import Image from "next/image";
+import { BarChart3, PieChart as PieChartIcon, TrendingUp } from "lucide-react";
+
+function LogoIcon({ className }: { className?: string }) {
+  return <Image src="/logo-tracker.png" alt="" width={16} height={16} className={className} />;
+}
 import type { ChartDataPoint } from "@/types";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -259,7 +264,7 @@ export function DashboardCharts({
       {/* 4. Horizontal bar: Performance par antenne */}
       {performanceByAntenne && performanceByAntenne.length > 0 && (
         <ChartCard
-          icon={Building2}
+          icon={LogoIcon}
           iconBg="bg-white dark:bg-teal-900/50 shadow-sm"
           iconColor="text-teal-600 dark:text-teal-400"
           cardBg="bg-gradient-to-br from-teal-50/60 to-cyan-50/40 border-teal-200/50 dark:from-teal-950/30 dark:to-cyan-950/20 dark:border-teal-800/30"
