@@ -2,7 +2,12 @@ import { z } from "zod";
 
 export const antenneAssignmentSchema = z.object({
   antenneId: z.string().uuid("Identifiant d'antenne invalide"),
-  responsableId: z.string().uuid("Identifiant de responsable invalide"),
+  responsableId: z
+    .string()
+    .uuid("Identifiant de responsable invalide")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
 });
 
 export const activiteSchema = z
@@ -39,7 +44,8 @@ export const activiteSchema = z
     projetId: z.string().uuid("Identifiant de projet invalide").optional().nullable(),
     antenneAssignments: z
       .array(antenneAssignmentSchema)
-      .min(1, "Au moins une affectation d'antenne est requise"),
+      .optional()
+      .default([]),
   })
   // Dates requises uniquement pour les activites ponctuelles
   .refine(
@@ -99,5 +105,13 @@ export const activiteSchema = z
     }
   );
 
+export const assignAntennesSchema = z.object({
+  activiteId: z.string().uuid("Identifiant d'activite invalide"),
+  assignments: z
+    .array(antenneAssignmentSchema)
+    .min(1, "Au moins une affectation d'antenne est requise"),
+});
+
 export type ActiviteFormValues = z.infer<typeof activiteSchema>;
 export type AntenneAssignment = z.infer<typeof antenneAssignmentSchema>;
+export type AssignAntennesValues = z.infer<typeof assignAntennesSchema>;

@@ -57,18 +57,18 @@ const NOTIFICATION_ICONS: Record<string, typeof Bell> = {
 };
 
 const NOTIFICATION_COLORS: Record<string, string> = {
-  ACTIVITE_EN_RETARD: "text-destructive bg-destructive/10",
-  RECOMMANDATION_EN_RETARD: "text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30",
-  CONGE_SOUMIS: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30",
-  CONGE_APPROUVE: "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30",
-  CONGE_REFUSE: "text-destructive bg-destructive/10",
-  ASSIGNATION_ACTIVITE: "text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30",
-  ASSIGNATION_RECOMMANDATION: "text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30",
-  RAPPEL_POINTAGE: "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30",
+  ACTIVITE_EN_RETARD: "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950/50",
+  RECOMMANDATION_EN_RETARD: "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-950/50",
+  CONGE_SOUMIS: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/50",
+  CONGE_APPROUVE: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/50",
+  CONGE_REFUSE: "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950/50",
+  ASSIGNATION_ACTIVITE: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-950/50",
+  ASSIGNATION_RECOMMANDATION: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-950/50",
+  RAPPEL_POINTAGE: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/50",
   SYSTEME: "text-muted-foreground bg-muted",
 };
 
-const POLL_INTERVAL = 15_000; // 15 secondes
+const POLL_INTERVAL = 15_000;
 
 export function NotificationBell() {
   const { data: session } = useSession();
@@ -83,7 +83,6 @@ export function NotificationBell() {
   const fetchUnread = useCallback(async () => {
     if (!session?.user?.id) return;
     const count = await getUnreadCount(session.user.id);
-    // Detecter les nouvelles notifications
     if (count > prevCountRef.current && prevCountRef.current > 0) {
       setHasNewNotif(true);
       setTimeout(() => setHasNewNotif(false), 3000);
@@ -141,30 +140,27 @@ export function NotificationBell() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 relative"
+          className="relative h-9 w-9 rounded-xl"
         >
           <Icon
-            className={`h-4 w-4 transition-transform ${
+            className={`h-4 w-4 transition-all duration-300 ${
               hasNewNotif ? "animate-bounce text-primary" : ""
             }`}
           />
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 min-w-5 px-1 flex items-center justify-center text-[10px] animate-in fade-in zoom-in"
-            >
+            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg shadow-red-500/30 animate-scale-in">
               {unreadCount > 99 ? "99+" : unreadCount}
-            </Badge>
+            </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end" sideOffset={8}>
+      <PopoverContent className="w-[400px] overflow-hidden rounded-2xl border-border/60 p-0 shadow-xl" align="end" sideOffset={8}>
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <h4 className="font-semibold text-sm">Notifications</h4>
+        <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <h4 className="text-sm font-semibold">Notifications</h4>
             {unreadCount > 0 && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 h-5">
+              <Badge variant="secondary" className="h-5 rounded-full px-2 text-[10px] font-semibold">
                 {unreadCount} non lue{unreadCount > 1 ? "s" : ""}
               </Badge>
             )}
@@ -173,7 +169,7 @@ export function NotificationBell() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs h-7 gap-1 text-muted-foreground hover:text-foreground"
+              className="h-7 gap-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground"
               onClick={handleMarkAllRead}
             >
               <CheckCheck className="h-3.5 w-3.5" />
@@ -181,18 +177,19 @@ export function NotificationBell() {
             </Button>
           )}
         </div>
-        <Separator />
 
         {/* Content */}
-        <ScrollArea className="max-h-[400px]">
+        <ScrollArea className="max-h-[420px]">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-14">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-2">
-              <Bell className="h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">
+            <div className="flex flex-col items-center justify-center gap-3 py-14">
+              <div className="rounded-2xl bg-muted/50 p-4">
+                <Bell className="h-8 w-8 text-muted-foreground/30" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">
                 Aucune notification
               </p>
             </div>
@@ -205,17 +202,15 @@ export function NotificationBell() {
                 return (
                   <div
                     key={n.id}
-                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer border-b last:border-b-0 transition-colors hover:bg-accent/50 ${
+                    className={`flex items-start gap-3 border-b border-border/40 px-5 py-3.5 cursor-pointer transition-all duration-200 hover:bg-accent/50 last:border-b-0 ${
                       !n.lue ? "bg-primary/[0.03]" : ""
                     }`}
                     onClick={() => handleClickNotification(n)}
                   >
-                    {/* Icon */}
-                    <div className={`mt-0.5 shrink-0 rounded-lg p-2 ${colorClass}`}>
+                    <div className={`mt-0.5 shrink-0 rounded-xl p-2 ${colorClass}`}>
                       <NotifIcon className="h-4 w-4" />
                     </div>
 
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p className={`text-sm leading-tight ${!n.lue ? "font-semibold" : "font-medium text-muted-foreground"}`}>
@@ -225,17 +220,16 @@ export function NotificationBell() {
                           <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                      <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
                         {n.message}
                       </p>
-                      <p className="text-[11px] text-muted-foreground/70 mt-1">
+                      <p className="mt-1.5 text-[11px] text-muted-foreground/60">
                         {formatTimeAgo(n.createdAt)}
                       </p>
                     </div>
 
-                    {/* Read indicator */}
                     {n.lue && (
-                      <Check className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-1" />
+                      <Check className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0 mt-1" />
                     )}
                   </div>
                 );

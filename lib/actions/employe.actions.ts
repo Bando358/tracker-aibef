@@ -28,7 +28,7 @@ export async function getAllEmployes(
   const where: Prisma.UserWhereInput = {};
 
   // Role-scoped filtering
-  if (session.role === "RESPONSABLE_ANTENNE") {
+  if (session.role === "RESPONSABLE_ANTENNE" || session.role === "ADMIN_ANTENNE") {
     where.antenneId = session.antenneId;
   } else if (antenneId) {
     where.antenneId = antenneId;
@@ -76,9 +76,9 @@ export async function getEmployeById(
     include: { antenne: true },
   });
 
-  // RESPONSABLE_ANTENNE can only see users from their own antenne
+  // RESPONSABLE_ANTENNE / ADMIN_ANTENNE can only see users from their own antenne
   if (
-    session.role === "RESPONSABLE_ANTENNE" &&
+    (session.role === "RESPONSABLE_ANTENNE" || session.role === "ADMIN_ANTENNE") &&
     user?.antenneId !== session.antenneId
   ) {
     throw new Error("Acces non autorise");
@@ -93,7 +93,9 @@ export async function createEmploye(
   try {
     const session = await checkActionPermission([
       "SUPER_ADMIN",
+      "ADMIN_SIMPLE",
       "RESPONSABLE_ANTENNE",
+      "ADMIN_ANTENNE",
     ]);
 
     const parsed = employeSchema.parse(data);
@@ -161,7 +163,9 @@ export async function updateEmploye(
   try {
     const session = await checkActionPermission([
       "SUPER_ADMIN",
+      "ADMIN_SIMPLE",
       "RESPONSABLE_ANTENNE",
+      "ADMIN_ANTENNE",
     ]);
 
     const parsed = employeUpdateSchema.parse(data);
@@ -237,7 +241,9 @@ export async function deactivateEmploye(
   try {
     const session = await checkActionPermission([
       "SUPER_ADMIN",
+      "ADMIN_SIMPLE",
       "RESPONSABLE_ANTENNE",
+      "ADMIN_ANTENNE",
     ]);
 
     // Prevent deactivating self

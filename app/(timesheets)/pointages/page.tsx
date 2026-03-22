@@ -1,23 +1,9 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/actions/auth.actions";
 import { getTodayPointage, getPointagesByAntenne } from "@/lib/actions/pointage.actions";
-import { PointageForm } from "@/components/pointages/pointage-form";
-import { PointageList } from "@/components/pointages/pointage-list";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { formatTimeFr, formatDateFr } from "@/lib/date-utils";
-import { ROLE_LABELS } from "@/lib/constants";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Users, Eye } from "lucide-react";
-import Link from "next/link";
+import { PointageWrapper } from "@/components/pointages/pointage-wrapper";
+import { PointageManagerClient } from "@/components/pointages/pointage-manager-client";
+import { Clock } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
@@ -25,51 +11,68 @@ export default async function PointagesPage() {
   const session = await getSessionUser();
   if (!session) redirect("/login");
 
+  // Les VOLONTAIRE et MAJ ne font pas de pointage
+  if (session.role === "VOLONTAIRE" || session.role === "MAJ") {
+    redirect("/dashboard");
+  }
+
   const isManager =
     session.role === "SUPER_ADMIN" ||
-    session.role === "RESPONSABLE_ANTENNE";
+    session.role === "ADMIN_SIMPLE" ||
+    session.role === "RESPONSABLE_ANTENNE" ||
+    session.role === "ADMIN_ANTENNE";
 
-  // Vue employe: son propre pointage
+  const apiKey = process.env.NEXT_PUBLIC_FINGERPRINT_API_KEY ?? "";
+
+  // Vue employe
   if (!isManager) {
     const todayPointage = await getTodayPointage(session.id);
 
     return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold">Mes pointages</h1>
-          <p className="text-muted-foreground">
-            Gerez vos pointages quotidiens
-          </p>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-[400px_1fr]">
-          <PointageForm
-            userId={session.id}
-            todayPointage={
-              todayPointage
-                ? {
-                    id: todayPointage.id,
-                    heureArrivee: todayPointage.heureArrivee,
-                    heureDepart: todayPointage.heureDepart,
-                    statut: todayPointage.statut,
-                    retardMinutes: todayPointage.retardMinutes,
-                  }
-                : null
-            }
-          />
-          <div>
-            <PointageList userId={session.id} />
+      <div className="space-y-6 animate-fade-in">
+        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 p-4 sm:p-6 text-white shadow-md sm:shadow-lg sm:shadow-sky-500/25">
+          <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/10 hidden sm:block" />
+          <div className="absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-white/5 hidden sm:block" />
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
+              <Clock className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Mes pointages</h1>
+              <p className="text-xs sm:text-sm text-white/80">
+                Gerez vos pointages quotidiens
+              </p>
+            </div>
           </div>
         </div>
+
+        <PointageWrapper
+          userId={session.id}
+          todayPointage={
+            todayPointage
+              ? {
+                  id: todayPointage.id,
+                  heureArrivee: todayPointage.heureArrivee,
+                  pauseDebut: todayPointage.pauseDebut,
+                  pauseFin: todayPointage.pauseFin,
+                  heureDepart: todayPointage.heureDepart,
+                  totalHeures: todayPointage.totalHeures,
+                  statut: todayPointage.statut,
+                  retardMinutes: todayPointage.retardMinutes,
+                }
+              : null
+          }
+          antenneId={session.antenneId}
+          apiKey={apiKey}
+        />
       </div>
     );
   }
 
-  // Vue manager: vue d'ensemble de l'antenne + propre pointage
-  const todayPointage = await getTodayPointage(session.id);
-  const today = new Date().toISOString().split("T")[0];
+  // Vue manager - saisie du cahier de pointage
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  // Recuperer les pointages de l'antenne (ou toutes si SUPER_ADMIN)
   let antenneEmployees: Array<{
     id: string;
     nom: string;
@@ -78,130 +81,50 @@ export default async function PointagesPage() {
     pointage: {
       id: string;
       heureArrivee: Date | null;
+      pauseDebut: Date | null;
+      pauseFin: Date | null;
       heureDepart: Date | null;
+      totalHeures: number;
       statut: string;
       retardMinutes: number;
     } | null;
   }> = [];
 
-  if (session.antenneId) {
+  if (session.role === "SUPER_ADMIN" || session.role === "ADMIN_SIMPLE") {
+    antenneEmployees = await getPointagesByAntenne(null, today);
+  } else if (session.antenneId) {
     antenneEmployees = await getPointagesByAntenne(session.antenneId, today);
   }
 
+  const serializedEmployees = JSON.parse(JSON.stringify(antenneEmployees));
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Gestion des pointages</h1>
-        <p className="text-muted-foreground">
-          Vue d&apos;ensemble des pointages
-          {session.antenneName ? ` - ${session.antenneName}` : ""}
-        </p>
+    <div className="space-y-6 animate-fade-in">
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 p-4 sm:p-6 text-white shadow-md sm:shadow-lg sm:shadow-sky-500/25">
+        <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/10 hidden sm:block" />
+        <div className="absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-white/5 hidden sm:block" />
+        <div className="absolute right-12 top-3 h-2.5 w-2.5 rounded-full bg-white/20 hidden sm:block" />
+        <div className="absolute right-[7rem] top-8 h-1.5 w-1.5 rounded-full bg-white/15 hidden sm:block" />
+        <div className="absolute left-1/3 -top-8 h-24 w-24 rounded-full bg-white/[0.07] hidden sm:block" />
+        <div className="relative flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
+            <Clock className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Cahier de pointage</h1>
+            <p className="text-xs sm:text-sm text-white/80">
+              Saisie des presences du personnel
+              {session.antenneName ? ` - ${session.antenneName}` : ""}
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Formulaire personnel du manager */}
-      <div className="grid gap-6 lg:grid-cols-[400px_1fr]">
-        <PointageForm
-          userId={session.id}
-          todayPointage={
-            todayPointage
-              ? {
-                  id: todayPointage.id,
-                  heureArrivee: todayPointage.heureArrivee,
-                  heureDepart: todayPointage.heureDepart,
-                  statut: todayPointage.statut,
-                  retardMinutes: todayPointage.retardMinutes,
-                }
-              : null
-          }
-        />
-
-        {/* Vue d'ensemble antenne - aujourd'hui */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Pointages du jour - {formatDateFr(new Date())}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {antenneEmployees.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                Aucun employe dans cette antenne
-              </p>
-            ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employe</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Arrivee</TableHead>
-                      <TableHead>Depart</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Retard</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {antenneEmployees.map((emp) => (
-                      <TableRow key={emp.id}>
-                        <TableCell className="font-medium">
-                          {emp.prenom} {emp.nom}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {ROLE_LABELS[emp.role] ?? emp.role}
-                        </TableCell>
-                        <TableCell>
-                          {emp.pointage?.heureArrivee
-                            ? formatTimeFr(emp.pointage.heureArrivee)
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {emp.pointage?.heureDepart
-                            ? formatTimeFr(emp.pointage.heureDepart)
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {emp.pointage ? (
-                            <StatusBadge status={emp.pointage.statut} />
-                          ) : (
-                            <span className="text-sm text-muted-foreground">
-                              Non pointe
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {emp.pointage && emp.pointage.retardMinutes > 0 ? (
-                            <span className="text-amber-600 font-medium">
-                              {emp.pointage.retardMinutes} min
-                            </span>
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/pointages/${emp.id}`}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              Voir
-                            </Link>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Historique personnel */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Mon historique</h2>
-        <PointageList userId={session.id} />
-      </div>
+      <PointageManagerClient
+        employees={serializedEmployees}
+        currentUserId={session.id}
+        antenneName={session.antenneName ?? "Toutes les antennes"}
+      />
     </div>
   );
 }

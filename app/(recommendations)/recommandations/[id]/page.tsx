@@ -6,13 +6,14 @@ import { RecommandationDetail } from "@/components/recommandations/recommandatio
 export const dynamic = 'force-dynamic';
 
 interface RecommandationDetailPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({
   params,
 }: RecommandationDetailPageProps): Promise<Metadata> {
-  const recommandation = await getRecommandationById(params.id);
+  const { id } = await params;
+  const recommandation = await getRecommandationById(id);
 
   if (!recommandation) {
     return { title: "Recommandation introuvable | TRACKER-AIBEF" };
@@ -27,7 +28,8 @@ export async function generateMetadata({
 export default async function RecommandationDetailPage({
   params,
 }: RecommandationDetailPageProps) {
-  const recommandation = await getRecommandationById(params.id);
+  const { id } = await params;
+  const recommandation = await getRecommandationById(id);
 
   if (!recommandation) {
     notFound();

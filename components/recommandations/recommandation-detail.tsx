@@ -208,33 +208,43 @@ export function RecommandationDetail({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/recommandations">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {recommandation.titre}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Creee le {formatDateFr(recommandation.createdAt)}
-            </p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 p-6 text-white shadow-lg shadow-indigo-500/25">
+        <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/10" />
+        <div className="absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-white/5" />
+        <div className="absolute right-12 top-3 h-2.5 w-2.5 rounded-full bg-white/20" />
+        <div className="absolute right-[7rem] top-8 h-1.5 w-1.5 rounded-full bg-white/15" />
+        <div className="absolute left-1/3 -top-8 h-24 w-24 rounded-full bg-white/[0.07]" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" asChild className="shrink-0 rounded-xl border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+              <Link href="/recommandations">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
+              <FileText className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {recommandation.titre}
+              </h1>
+              <p className="text-sm text-white/80">
+                Creee le {formatDateFr(recommandation.createdAt)}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge
-            status={recommandation.statut}
-            label={STATUT_RECOMMANDATION_LABELS[recommandation.statut]}
-          />
-          <StatusBadge
-            status={recommandation.priorite}
-            label={PRIORITE_LABELS[recommandation.priorite]}
-          />
+          <div className="flex items-center gap-2 sm:shrink-0">
+            <StatusBadge
+              status={recommandation.statut}
+              label={STATUT_RECOMMANDATION_LABELS[recommandation.statut]}
+            />
+            <StatusBadge
+              status={recommandation.priorite}
+              label={PRIORITE_LABELS[recommandation.priorite]}
+            />
+          </div>
         </div>
       </div>
 
@@ -242,10 +252,12 @@ export function RecommandationDetail({
         {/* Main content */}
         <div className="space-y-6 lg:col-span-2">
           {/* Details Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2.5 text-base">
+                <div className="rounded-xl bg-primary/10 p-1.5">
+                  <FileText className="h-4 w-4 text-primary" />
+                </div>
                 Details
               </CardTitle>
             </CardHeader>
@@ -347,10 +359,12 @@ export function RecommandationDetail({
           </Card>
 
           {/* Responsables Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2.5 text-base">
+                <div className="rounded-xl bg-primary/10 p-1.5">
+                  <Users className="h-4 w-4 text-primary" />
+                </div>
                 Responsables ({recommandation.responsables.length})
               </CardTitle>
             </CardHeader>
@@ -359,7 +373,7 @@ export function RecommandationDetail({
                 {recommandation.responsables.map((resp) => (
                   <div
                     key={resp.id}
-                    className="flex items-center justify-between rounded-md border p-3"
+                    className="flex items-center justify-between rounded-xl border border-border/60 p-3 transition-colors hover:bg-accent/50"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
@@ -391,10 +405,12 @@ export function RecommandationDetail({
           </Card>
 
           {/* History Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5" />
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2.5 text-base">
+                <div className="rounded-xl bg-primary/10 p-1.5">
+                  <History className="h-4 w-4 text-primary" />
+                </div>
                 Historique
               </CardTitle>
               <CardDescription>
@@ -462,8 +478,8 @@ export function RecommandationDetail({
         <div className="space-y-6">
           {/* Status change controls */}
           {!isTerminal && (
-            <Card>
-              <CardHeader>
+            <Card className="border-border/60 shadow-sm">
+              <CardHeader className="pb-3">
                 <CardTitle className="text-base">
                   Changer le statut
                 </CardTitle>
@@ -524,10 +540,12 @@ export function RecommandationDetail({
 
           {/* Resolve button / form */}
           {!isTerminal && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <Card className="border-border/60 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2.5 text-base">
+                  <div className="rounded-xl bg-emerald-100 p-1.5 dark:bg-emerald-900/40">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
                   Resoudre
                 </CardTitle>
               </CardHeader>
@@ -590,8 +608,8 @@ export function RecommandationDetail({
           )}
 
           {/* Delete action */}
-          <Card>
-            <CardHeader>
+          <Card className="border-destructive/30 shadow-sm">
+            <CardHeader className="pb-3">
               <CardTitle className="text-base text-destructive">
                 Zone de danger
               </CardTitle>

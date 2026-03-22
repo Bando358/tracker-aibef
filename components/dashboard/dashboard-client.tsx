@@ -62,14 +62,10 @@ import {
 } from "recharts";
 import type { ChartDataPoint } from "@/types";
 
-// ======================== PROPS ========================
-
 interface DashboardClientProps {
   data: DashboardData;
   role: string;
 }
-
-// ======================== CHART HELPERS ========================
 
 const PIE_COLORS = [
   "hsl(var(--chart-1))",
@@ -82,24 +78,23 @@ const PIE_COLORS = [
 
 const tooltipStyle = {
   borderRadius: "12px",
-  border: "none",
+  border: "1px solid hsl(var(--border) / 0.5)",
   backgroundColor: "hsl(var(--card))",
-  boxShadow: "0 10px 40px -10px hsl(var(--foreground) / 0.15)",
-  padding: "8px 12px",
+  boxShadow: "0 8px 32px -8px hsl(var(--foreground) / 0.12)",
+  padding: "10px 14px",
   color: "hsl(var(--foreground))",
+  fontSize: "13px",
 };
-
-// ======================== COMPONENT ========================
 
 export function DashboardClient({ data, role }: DashboardClientProps) {
   const { kpis, pointageSummary, congesData, retardsData } = data;
-  const isEmployee = role === "SOIGNANT" || role === "ADMINISTRATIF";
-  const isManager = role === "SUPER_ADMIN" || role === "RESPONSABLE_ANTENNE";
+  const isEmployee = role === "PERSONNEL";
+  const isManager = role === "SUPER_ADMIN" || role === "ADMIN_SIMPLE" || role === "RESPONSABLE_ANTENNE" || role === "ADMIN_ANTENNE";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Hero KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
         <StatCard
           title="Total activites"
           value={kpis.activitesTotal}
@@ -140,7 +135,7 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
       </div>
 
       {/* Secondary KPI row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
         <StatCard
           title="Activites en retard"
           value={kpis.activitesEnRetard}
@@ -173,11 +168,11 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
 
       {/* Pointage summary for employees */}
       {isEmployee && pointageSummary && (
-        <Card className="overflow-hidden border-0 shadow-sm">
+        <Card className="overflow-hidden border-sky-200/60 bg-gradient-to-br from-sky-50/80 to-blue-50/50 shadow-sm dark:border-sky-800/40 dark:from-sky-950/40 dark:to-blue-950/20">
           <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-primary/10 p-1.5">
-                <Calendar className="h-4 w-4 text-primary" />
+            <div className="flex items-center gap-2.5">
+              <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-sky-900/60">
+                <Calendar className="h-4 w-4 text-sky-600 dark:text-sky-400" />
               </div>
               <CardTitle className="text-sm font-semibold">
                 Mon pointage de la semaine
@@ -190,49 +185,46 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
                 label="Present"
                 value={pointageSummary.present}
                 icon={CircleCheck}
-                colorClass="text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400"
+                colorClass="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/40 dark:text-emerald-400"
               />
               <PointageItem
                 label="Absent"
                 value={pointageSummary.absent}
                 icon={CircleX}
-                colorClass="text-red-600 bg-red-100 dark:bg-red-900/40 dark:text-red-400"
+                colorClass="text-red-600 bg-red-50 dark:bg-red-900/40 dark:text-red-400"
               />
               <PointageItem
                 label="Retard"
                 value={pointageSummary.retard}
                 icon={Timer}
-                colorClass="text-amber-600 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-400"
+                colorClass="text-amber-600 bg-amber-50 dark:bg-amber-900/40 dark:text-amber-400"
               />
               <PointageItem
                 label="Conge"
                 value={pointageSummary.conge}
                 icon={Palmtree}
-                colorClass="text-blue-600 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-400"
+                colorClass="text-blue-600 bg-blue-50 dark:bg-blue-900/40 dark:text-blue-400"
               />
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* ===== Detail section — visually distinct from KPI cards ===== */}
-      <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 shadow-inner sm:p-6">
-        {/* Section title */}
-        <div className="mb-4 flex items-center gap-2">
-          <div className="h-5 w-1 rounded-full bg-primary" />
+      {/* Detail section */}
+      <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-slate-50/80 via-white to-slate-50/40 p-5 shadow-sm dark:from-slate-900/40 dark:via-slate-900/20 dark:to-slate-800/20 sm:p-6">
+        <div className="mb-5 flex items-center gap-2.5">
+          <div className="h-6 w-1 rounded-full bg-gradient-to-b from-primary to-primary/40" />
           <h2 className="text-base font-semibold tracking-tight">Vue detaillee</h2>
         </div>
 
-        <Tabs defaultValue="activites" className="space-y-5">
+        <Tabs defaultValue="activites" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 h-auto gap-2 rounded-xl bg-background/80 p-1.5 shadow-sm border border-border/50 sm:gap-3">
             {/* Tab Activites */}
             <TabsTrigger
               value="activites"
               className="group/tab relative overflow-hidden rounded-lg p-0 text-left shadow-none transition-all duration-300 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-primary/10 data-[state=inactive]:hover:bg-accent/50"
             >
-              {/* Active gradient top bar */}
               <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary via-primary/80 to-primary/40 opacity-0 transition-opacity duration-300 group-data-[state=active]/tab:opacity-100" />
-
               <div className="relative flex flex-col gap-1.5 px-3 py-2.5 sm:px-4 sm:py-3">
                 <div className="flex w-full items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -241,21 +233,13 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
                     </div>
                     <div>
                       <span className="text-sm font-semibold">Activites</span>
-                      <p className="hidden text-[10px] text-muted-foreground sm:block">
-                        Suivi et performance
-                      </p>
+                      <p className="hidden text-[10px] text-muted-foreground sm:block">Suivi et performance</p>
                     </div>
                   </div>
-                  <span className="text-base font-bold text-primary sm:text-lg">
-                    {kpis.activitesTotal}
-                  </span>
+                  <span className="text-base font-bold text-primary sm:text-lg">{kpis.activitesTotal}</span>
                 </div>
-                {/* Mini progress bar */}
                 <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
-                    style={{ width: `${Math.min(kpis.tauxRealisation, 100)}%` }}
-                  />
+                  <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500" style={{ width: `${Math.min(kpis.tauxRealisation, 100)}%` }} />
                 </div>
                 <div className="flex justify-between text-[10px] text-muted-foreground">
                   <span>{kpis.activitesRealisees} realisees</span>
@@ -270,7 +254,6 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
               className="group/tab relative overflow-hidden rounded-lg p-0 text-left shadow-none transition-all duration-300 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-blue-500/10 data-[state=inactive]:hover:bg-accent/50"
             >
               <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-400 opacity-0 transition-opacity duration-300 group-data-[state=active]/tab:opacity-100" />
-
               <div className="relative flex flex-col gap-1.5 px-3 py-2.5 sm:px-4 sm:py-3">
                 <div className="flex w-full items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -279,27 +262,20 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
                     </div>
                     <div>
                       <span className="text-sm font-semibold">Conges</span>
-                      <p className="hidden text-[10px] text-muted-foreground sm:block">
-                        Permissions et absences
-                      </p>
+                      <p className="hidden text-[10px] text-muted-foreground sm:block">Permissions et absences</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
                     {congesData.enAttente > 0 ? (
                       <span className="relative flex h-5 min-w-5 items-center justify-center">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-30" />
-                        <span className="relative flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
-                          {congesData.enAttente}
-                        </span>
+                        <span className="relative flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">{congesData.enAttente}</span>
                       </span>
                     ) : (
-                      <span className="text-base font-bold text-blue-600 dark:text-blue-400 sm:text-lg">
-                        {congesData.approuves}
-                      </span>
+                      <span className="text-base font-bold text-blue-600 dark:text-blue-400 sm:text-lg">{congesData.approuves}</span>
                     )}
                   </div>
                 </div>
-                {/* Conge stats mini bar */}
                 <div className="flex gap-1">
                   <div className="flex flex-1 items-center justify-center gap-1 rounded bg-emerald-50 py-0.5 dark:bg-emerald-900/20">
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -323,7 +299,6 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
               className="group/tab relative overflow-hidden rounded-lg p-0 text-left shadow-none transition-all duration-300 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-amber-500/10 data-[state=inactive]:hover:bg-accent/50"
             >
               <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber-500 via-orange-400 to-red-400 opacity-0 transition-opacity duration-300 group-data-[state=active]/tab:opacity-100" />
-
               <div className="relative flex flex-col gap-1.5 px-3 py-2.5 sm:px-4 sm:py-3">
                 <div className="flex w-full items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -332,22 +307,17 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
                     </div>
                     <div>
                       <span className="text-sm font-semibold">Retards</span>
-                      <p className="hidden text-[10px] text-muted-foreground sm:block">
-                        Ponctualite et presence
-                      </p>
+                      <p className="hidden text-[10px] text-muted-foreground sm:block">Ponctualite et presence</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
                     {retardsData.totalRetardsMois > 0 ? (
-                      <span className="text-base font-bold text-amber-600 dark:text-amber-400 sm:text-lg">
-                        {retardsData.totalRetardsMois}
-                      </span>
+                      <span className="text-base font-bold text-amber-600 dark:text-amber-400 sm:text-lg">{retardsData.totalRetardsMois}</span>
                     ) : (
                       <span className="text-base font-bold text-emerald-600 dark:text-emerald-400 sm:text-lg">0</span>
                     )}
                   </div>
                 </div>
-                {/* Retards + Absences mini stats */}
                 <div className="flex gap-1">
                   <div className="flex flex-1 items-center justify-center gap-1 rounded bg-amber-50 py-0.5 dark:bg-amber-900/20">
                     <Timer className="h-2.5 w-2.5 text-amber-600 dark:text-amber-400" />
@@ -362,344 +332,200 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
             </TabsTrigger>
           </TabsList>
 
-        {/* TAB: Activites */}
-        <TabsContent value="activites" className="space-y-5">
-          <DashboardCharts
-            activitesByStatus={data.activitesByStatus}
-            recommandationsByStatus={data.recommandationsByStatus}
-            activitesByMonth={data.activitesByMonth}
-            performanceByAntenne={
-              role === "SUPER_ADMIN" ? data.performanceByAntenne : undefined
-            }
-          />
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <RecentActivitesCard
-              activites={data.recentActivites}
-              isEmployee={isEmployee}
+          {/* TAB: Activites */}
+          <TabsContent value="activites" className="space-y-6 animate-fade-in">
+            <DashboardCharts
+              activitesByStatus={data.activitesByStatus}
+              recommandationsByStatus={data.recommandationsByStatus}
+              activitesByMonth={data.activitesByMonth}
+              performanceByAntenne={
+                role === "SUPER_ADMIN" || role === "ADMIN_SIMPLE" ? data.performanceByAntenne : undefined
+              }
             />
-            <RecentRecommandationsCard
-              recommandations={data.recentRecommandations}
-            />
-          </div>
-        </TabsContent>
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <RecentActivitesCard activites={data.recentActivites} isEmployee={isEmployee} />
+              <RecentRecommandationsCard recommandations={data.recentRecommandations} />
+            </div>
+          </TabsContent>
 
-        {/* TAB: Conges */}
-        <TabsContent value="conges" className="space-y-5">
-          {/* Conges KPI row */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="En attente"
-              value={congesData.enAttente}
-              description="Demandes a traiter"
-              icon={FileClock}
-              variant={congesData.enAttente > 0 ? "warning" : "default"}
-            />
-            <StatCard
-              title="Approuves"
-              value={congesData.approuves}
-              description="Cette annee"
-              icon={FileCheck2}
-              variant="success"
-            />
-            <StatCard
-              title="Refuses"
-              value={congesData.refuses}
-              description="Cette annee"
-              icon={FileX2}
-              variant={congesData.refuses > 0 ? "danger" : "default"}
-            />
-            <StatCard
-              title="Jours utilises"
-              value={congesData.totalJoursUtilises}
-              description="Jours de conges pris"
-              icon={CalendarDays}
-            />
-          </div>
+          {/* TAB: Conges */}
+          <TabsContent value="conges" className="space-y-6 animate-fade-in">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
+              <StatCard title="En attente" value={congesData.enAttente} description="Demandes a traiter" icon={FileClock} variant={congesData.enAttente > 0 ? "warning" : "default"} />
+              <StatCard title="Approuves" value={congesData.approuves} description="Cette annee" icon={FileCheck2} variant="success" />
+              <StatCard title="Refuses" value={congesData.refuses} description="Cette annee" icon={FileX2} variant={congesData.refuses > 0 ? "danger" : "default"} />
+              <StatCard title="Jours utilises" value={congesData.totalJoursUtilises} description="Jours de conges pris" icon={CalendarDays} />
+            </div>
 
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            {/* Conges by type chart */}
-            <Card className="overflow-hidden border-0 shadow-sm">
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-primary/10 p-1.5">
-                    <BarChart3 className="h-4 w-4 text-primary" />
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <Card className="overflow-hidden border-blue-200/50 bg-gradient-to-br from-blue-50/60 to-indigo-50/40 shadow-sm dark:border-blue-800/30 dark:from-blue-950/30 dark:to-indigo-950/20">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-blue-900/50">
+                      <BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <CardTitle className="text-sm font-semibold">Conges par type</CardTitle>
                   </div>
-                  <CardTitle className="text-sm font-semibold">
-                    Conges par type
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {congesData.congesByType.length > 0 ? (
-                  <div className="flex items-center">
-                    <ResponsiveContainer width="60%" height={220}>
-                      <PieChart>
-                        <Pie
-                          data={congesData.congesByType}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={45}
-                          outerRadius={80}
-                          paddingAngle={3}
-                          dataKey="value"
-                          nameKey="name"
-                          strokeWidth={0}
-                          label={(props) => {
-                            const { value, cx, cy, midAngle, outerRadius: or } = props as { value: number; cx: number; cy: number; midAngle: number; outerRadius: number };
-                            const RADIAN = Math.PI / 180;
-                            const r = or + 14;
-                            const x = cx + r * Math.cos(-midAngle * RADIAN);
-                            const y = cy + r * Math.sin(-midAngle * RADIAN);
-                            return value > 0 ? (
-                              <text x={x} y={y} textAnchor="middle" dominantBaseline="central" style={{ fontSize: 11, fontWeight: 700, fill: "hsl(var(--foreground))" }}>
-                                {value}
-                              </text>
-                            ) : null;
-                          }}
-                        >
-                          {congesData.congesByType.map((_: ChartDataPoint, index: number) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={PIE_COLORS[index % PIE_COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip contentStyle={tooltipStyle} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="flex w-[40%] flex-col gap-2">
-                      {congesData.congesByType.map((entry: ChartDataPoint, index: number) => (
-                        <div key={entry.name} className="flex items-center gap-2 text-sm">
-                          <div
-                            className="h-3 w-3 rounded-full"
-                            style={{
-                              backgroundColor:
-                                PIE_COLORS[index % PIE_COLORS.length],
+                </CardHeader>
+                <CardContent>
+                  {congesData.congesByType.length > 0 ? (
+                    <div className="flex items-center">
+                      <ResponsiveContainer width="60%" height={220}>
+                        <PieChart>
+                          <Pie data={congesData.congesByType} cx="50%" cy="50%" innerRadius={45} outerRadius={80} paddingAngle={3} dataKey="value" nameKey="name" strokeWidth={0}
+                            label={(props) => {
+                              const { value, cx, cy, midAngle, outerRadius: or } = props as { value: number; cx: number; cy: number; midAngle: number; outerRadius: number };
+                              const RADIAN = Math.PI / 180;
+                              const r = or + 14;
+                              const x = cx + r * Math.cos(-midAngle * RADIAN);
+                              const y = cy + r * Math.sin(-midAngle * RADIAN);
+                              return value > 0 ? (
+                                <text x={x} y={y} textAnchor="middle" dominantBaseline="central" style={{ fontSize: 11, fontWeight: 700, fill: "hsl(var(--foreground))" }}>{value}</text>
+                              ) : null;
                             }}
-                          />
-                          <span className="truncate text-xs text-muted-foreground">
-                            {TYPE_CONGE_LABELS[entry.name] ?? entry.name}
-                          </span>
-                          <span className="ml-auto text-xs font-semibold">
-                            {entry.value}
-                          </span>
+                          >
+                            {congesData.congesByType.map((_: ChartDataPoint, index: number) => (
+                              <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={tooltipStyle} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="flex w-[40%] flex-col gap-2.5">
+                        {congesData.congesByType.map((entry: ChartDataPoint, index: number) => (
+                          <div key={entry.name} className="flex items-center gap-2.5">
+                            <div className="h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
+                            <span className="flex-1 truncate text-xs text-muted-foreground">{TYPE_CONGE_LABELS[entry.name] ?? entry.name}</span>
+                            <span className="text-xs font-bold tabular-nums">{entry.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <EmptyState text="Aucun conge approuve cette annee" />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden border-blue-200/50 bg-gradient-to-br from-blue-50/60 to-cyan-50/40 shadow-sm dark:border-blue-800/30 dark:from-blue-950/30 dark:to-cyan-950/20">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-blue-900/50">
+                      <CalendarDays className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <CardTitle className="text-sm font-semibold">Dernieres demandes</CardTitle>
+                  </div>
+                  <Link href="/conges" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                    Tout voir <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  {congesData.recentConges.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {congesData.recentConges.map((c: CongeItem) => (
+                        <div key={c.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3.5 transition-all duration-200 hover:border-primary/20 hover:bg-accent/50">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium">{isManager ? `${c.employePrenom} ${c.employeNom}` : TYPE_CONGE_LABELS[c.type] ?? c.type}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {isManager && <span>{TYPE_CONGE_LABELS[c.type] ?? c.type} &middot; </span>}
+                              {c.nbJours}j &middot; {formatDateFr(c.dateDebut)} - {formatDateFr(c.dateFin)}
+                            </p>
+                          </div>
+                          <StatusBadge status={c.statut} label={STATUT_CONGE_LABELS[c.statut] ?? c.statut} />
                         </div>
                       ))}
                     </div>
-                  </div>
-                ) : (
-                  <EmptyState text="Aucun conge approuve cette annee" />
-                )}
-              </CardContent>
-            </Card>
+                  ) : (
+                    <EmptyState text="Aucune demande de conge" />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-            {/* Recent conges list */}
-            <Card className="overflow-hidden border-0 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-primary/10 p-1.5">
-                    <CalendarDays className="h-4 w-4 text-primary" />
+          {/* TAB: Retards */}
+          <TabsContent value="retards" className="space-y-6 animate-fade-in">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
+              <StatCard title="Retards ce mois" value={retardsData.totalRetardsMois} description="Nombre de pointages en retard" icon={Timer} variant={retardsData.totalRetardsMois > 0 ? "warning" : "default"} />
+              <StatCard title="Minutes cumulees" value={`${retardsData.totalRetardMinutes} min`} description="Total retard ce mois" icon={Clock} variant={retardsData.totalRetardMinutes > 30 ? "danger" : "default"} />
+              <StatCard title="Absences ce mois" value={retardsData.totalAbsencesMois} description="Jours marques absent" icon={UserX} variant={retardsData.totalAbsencesMois > 0 ? "danger" : "default"} />
+              {isManager ? (
+                <StatCard title="Employes concernes" value={retardsData.employesAvecRetard} description="Avec au moins 1 retard" icon={Users} />
+              ) : (
+                <StatCard title="Recommandations en retard" value={kpis.recommandationsEnRetard} description="En depassement d'echeance" icon={AlertTriangle} variant={kpis.recommandationsEnRetard > 0 ? "danger" : "default"} />
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <Card className="overflow-hidden border-amber-200/50 bg-gradient-to-br from-amber-50/60 to-orange-50/40 shadow-sm dark:border-amber-800/30 dark:from-amber-950/30 dark:to-orange-950/20">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-amber-900/50">
+                      <BarChart3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-sm font-semibold">Retards par jour</CardTitle>
+                      <p className="text-xs text-muted-foreground">Ce mois-ci</p>
+                    </div>
                   </div>
-                  <CardTitle className="text-sm font-semibold">
-                    Dernieres demandes
-                  </CardTitle>
-                </div>
-                <Link
-                  href="/conges"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                >
-                  Tout voir <ArrowRight className="h-3 w-3" />
-                </Link>
-              </CardHeader>
-              <CardContent>
-                {congesData.recentConges.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {congesData.recentConges.map((c: CongeItem) => (
-                      <div
-                        key={c.id}
-                        className="flex items-center justify-between rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium">
-                            {isManager
-                              ? `${c.employePrenom} ${c.employeNom}`
-                              : TYPE_CONGE_LABELS[c.type] ?? c.type}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {isManager && (
-                              <span>{TYPE_CONGE_LABELS[c.type] ?? c.type} &middot; </span>
-                            )}
-                            {c.nbJours}j &middot; {formatDateFr(c.dateDebut)} - {formatDateFr(c.dateFin)}
-                          </p>
+                </CardHeader>
+                <CardContent>
+                  {retardsData.retardsByDay.some((d: ChartDataPoint) => d.value > 0) ? (
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={retardsData.retardsByDay} barCategoryGap="25%">
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(var(--accent))", radius: 8 }} />
+                        <Bar dataKey="value" name="Retards" fill="hsl(var(--chart-4))" radius={[8, 8, 0, 0]}>
+                          <LabelList dataKey="value" position="top" style={{ fontSize: 11, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <EmptyState text="Aucun retard ce mois-ci" />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden border-amber-200/50 bg-gradient-to-br from-amber-50/60 to-orange-50/40 shadow-sm dark:border-amber-800/30 dark:from-amber-950/30 dark:to-orange-950/20">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-amber-900/50">
+                      <Timer className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <CardTitle className="text-sm font-semibold">Derniers retards</CardTitle>
+                  </div>
+                  <Link href="/pointages" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                    Tout voir <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  {retardsData.recentRetards.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {retardsData.recentRetards.map((r: RetardItem) => (
+                        <div key={r.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3.5 transition-all duration-200 hover:border-amber-200 hover:bg-accent/50 dark:hover:border-amber-800">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium">{isManager ? `${r.employePrenom} ${r.employeNom}` : formatDateFr(r.date)}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {isManager && <span>{formatDateFr(r.date)} &middot; </span>}
+                              {r.antenneNom && <span>{r.antenneNom} &middot; </span>}
+                              <span className="font-medium text-amber-600 dark:text-amber-400">+{r.retardMinutes} min</span>
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                            {r.retardMinutes} min
+                          </Badge>
                         </div>
-                        <StatusBadge
-                          status={c.statut}
-                          label={STATUT_CONGE_LABELS[c.statut] ?? c.statut}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState text="Aucune demande de conge" />
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* TAB: Retards */}
-        <TabsContent value="retards" className="space-y-5">
-          {/* Retards KPIs */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Retards ce mois"
-              value={retardsData.totalRetardsMois}
-              description="Nombre de pointages en retard"
-              icon={Timer}
-              variant={retardsData.totalRetardsMois > 0 ? "warning" : "default"}
-            />
-            <StatCard
-              title="Minutes cumulees"
-              value={`${retardsData.totalRetardMinutes} min`}
-              description="Total retard ce mois"
-              icon={Clock}
-              variant={retardsData.totalRetardMinutes > 30 ? "danger" : "default"}
-            />
-            <StatCard
-              title="Absences ce mois"
-              value={retardsData.totalAbsencesMois}
-              description="Jours marques absent"
-              icon={UserX}
-              variant={retardsData.totalAbsencesMois > 0 ? "danger" : "default"}
-            />
-            {isManager ? (
-              <StatCard
-                title="Employes concernes"
-                value={retardsData.employesAvecRetard}
-                description="Avec au moins 1 retard"
-                icon={Users}
-              />
-            ) : (
-              <StatCard
-                title="Recommandations en retard"
-                value={kpis.recommandationsEnRetard}
-                description="En depassement d'echeance"
-                icon={AlertTriangle}
-                variant={kpis.recommandationsEnRetard > 0 ? "danger" : "default"}
-              />
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            {/* Retards by day of week chart */}
-            <Card className="overflow-hidden border-0 shadow-sm">
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-amber-100 p-1.5 dark:bg-amber-900/40">
-                    <BarChart3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-sm font-semibold">
-                      Retards par jour
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">Ce mois-ci</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {retardsData.retardsByDay.some((d: ChartDataPoint) => d.value > 0) ? (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={retardsData.retardsByDay} barCategoryGap="25%">
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="hsl(var(--border))"
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="name"
-                        tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                        tickLine={false}
-                        axisLine={false}
-                        allowDecimals={false}
-                      />
-                      <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(var(--accent))" }} />
-                      <Bar
-                        dataKey="value"
-                        name="Retards"
-                        fill="hsl(var(--chart-4))"
-                        radius={[6, 6, 0, 0]}
-                      >
-                        <LabelList dataKey="value" position="top" style={{ fontSize: 11, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <EmptyState text="Aucun retard ce mois-ci" />
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent retards list */}
-            <Card className="overflow-hidden border-0 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-amber-100 p-1.5 dark:bg-amber-900/40">
-                    <Timer className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <CardTitle className="text-sm font-semibold">
-                    Derniers retards
-                  </CardTitle>
-                </div>
-                <Link
-                  href="/pointages"
-                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                >
-                  Tout voir <ArrowRight className="h-3 w-3" />
-                </Link>
-              </CardHeader>
-              <CardContent>
-                {retardsData.recentRetards.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {retardsData.recentRetards.map((r: RetardItem) => (
-                      <div
-                        key={r.id}
-                        className="flex items-center justify-between rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium">
-                            {isManager
-                              ? `${r.employePrenom} ${r.employeNom}`
-                              : formatDateFr(r.date)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {isManager && <span>{formatDateFr(r.date)} &middot; </span>}
-                            {r.antenneNom && <span>{r.antenneNom} &middot; </span>}
-                            <span className="font-medium text-amber-600 dark:text-amber-400">
-                              +{r.retardMinutes} min
-                            </span>
-                          </p>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                        >
-                          {r.retardMinutes} min
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState text="Aucun retard enregistre" />
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState text="Aucun retard enregistre" />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
@@ -720,12 +546,12 @@ function PointageItem({
   colorClass: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
-      <div className={`rounded-lg p-2 ${colorClass}`}>
+    <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-white/80 p-3 transition-all duration-200 hover:shadow-sm dark:bg-card">
+      <div className={`rounded-xl p-2 ${colorClass}`}>
         <Icon className="h-4 w-4" />
       </div>
       <div>
-        <div className="text-xl font-bold">{value}</div>
+        <div className="text-xl font-bold tabular-nums">{value}</div>
         <div className="text-xs text-muted-foreground">{label}</div>
       </div>
     </div>
@@ -740,20 +566,17 @@ function RecentActivitesCard({
   isEmployee: boolean;
 }) {
   return (
-    <Card className="overflow-hidden border-0 shadow-sm">
+    <Card className="overflow-hidden border-orange-200/50 bg-gradient-to-br from-orange-50/60 to-amber-50/40 shadow-sm dark:border-orange-800/30 dark:from-orange-950/30 dark:to-amber-950/20">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-primary/10 p-1.5">
-            <Activity className="h-4 w-4 text-primary" />
+        <div className="flex items-center gap-2.5">
+          <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-orange-900/50">
+            <Activity className="h-4 w-4 text-orange-600 dark:text-orange-400" />
           </div>
           <CardTitle className="text-sm font-semibold">
             {isEmployee ? "Mes activites recentes" : "Activites recentes"}
           </CardTitle>
         </div>
-        <Link
-          href="/activites"
-          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-        >
+        <Link href="/activites" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
           Tout voir <ArrowRight className="h-3 w-3" />
         </Link>
       </CardHeader>
@@ -761,24 +584,14 @@ function RecentActivitesCard({
         {activites.length > 0 ? (
           <div className="space-y-2.5">
             {activites.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-center justify-between rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50"
-              >
+              <div key={a.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3.5 transition-all duration-200 hover:border-primary/20 hover:bg-accent/50">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{a.titre}</p>
-                  {a.projetNom && (
-                    <p className="text-xs text-muted-foreground">{a.projetNom}</p>
-                  )}
+                  {a.projetNom && <p className="text-xs text-muted-foreground">{a.projetNom}</p>}
                 </div>
                 <div className="ml-3 flex items-center gap-2">
-                  <StatusBadge
-                    status={a.statut}
-                    label={STATUT_ACTIVITE_LABELS[a.statut]}
-                  />
-                  <span className="hidden text-xs text-muted-foreground sm:inline">
-                    {formatDateFr(a.dateFin)}
-                  </span>
+                  <StatusBadge status={a.statut} label={STATUT_ACTIVITE_LABELS[a.statut]} />
+                  <span className="hidden text-xs tabular-nums text-muted-foreground sm:inline">{formatDateFr(a.dateFin)}</span>
                 </div>
               </div>
             ))}
@@ -797,20 +610,15 @@ function RecentRecommandationsCard({
   recommandations: DashboardData["recentRecommandations"];
 }) {
   return (
-    <Card className="overflow-hidden border-0 shadow-sm">
+    <Card className="overflow-hidden border-red-200/50 bg-gradient-to-br from-red-50/60 to-rose-50/40 shadow-sm dark:border-red-800/30 dark:from-red-950/30 dark:to-rose-950/20">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-red-100 p-1.5 dark:bg-red-900/40">
+        <div className="flex items-center gap-2.5">
+          <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-red-900/50">
             <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
           </div>
-          <CardTitle className="text-sm font-semibold">
-            Recommandations en retard
-          </CardTitle>
+          <CardTitle className="text-sm font-semibold">Recommandations en retard</CardTitle>
         </div>
-        <Link
-          href="/recommandations"
-          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-        >
+        <Link href="/recommandations" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
           Tout voir <ArrowRight className="h-3 w-3" />
         </Link>
       </CardHeader>
@@ -818,32 +626,14 @@ function RecentRecommandationsCard({
         {recommandations.length > 0 ? (
           <div className="space-y-2.5">
             {recommandations.map((r) => (
-              <div
-                key={r.id}
-                className="flex items-center justify-between rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50"
-              >
+              <div key={r.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3.5 transition-all duration-200 hover:border-red-200/50 hover:bg-accent/50 dark:hover:border-red-800/30">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{r.titre}</p>
-                  {r.antenneNom && (
-                    <p className="text-xs text-muted-foreground">{r.antenneNom}</p>
-                  )}
+                  {r.antenneNom && <p className="text-xs text-muted-foreground">{r.antenneNom}</p>}
                 </div>
                 <div className="ml-3 flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className={
-                      r.priorite === "HAUTE"
-                        ? "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400"
-                        : r.priorite === "MOYENNE"
-                          ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                          : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
-                    }
-                  >
-                    {PRIORITE_LABELS[r.priorite] ?? r.priorite}
-                  </Badge>
-                  <span className="hidden text-xs text-muted-foreground sm:inline">
-                    {formatDateFr(r.dateEcheance)}
-                  </span>
+                  <StatusBadge status={r.priorite} label={PRIORITE_LABELS[r.priorite] ?? r.priorite} />
+                  <span className="hidden text-xs tabular-nums text-muted-foreground sm:inline">{formatDateFr(r.dateEcheance)}</span>
                 </div>
               </div>
             ))}
@@ -858,7 +648,10 @@ function RecentRecommandationsCard({
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="flex h-32 items-center justify-center">
+    <div className="flex h-32 flex-col items-center justify-center gap-2">
+      <div className="h-8 w-8 rounded-full bg-muted/50 flex items-center justify-center">
+        <div className="h-3 w-3 rounded-full bg-muted-foreground/20" />
+      </div>
       <p className="text-sm text-muted-foreground">{text}</p>
     </div>
   );

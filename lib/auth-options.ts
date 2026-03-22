@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { DEFAULT_PERMISSIONS } from "@/lib/constants";
 
 // Sur Vercel, forcer HTTPS pour que les cookies Secure fonctionnent
 const useSecureCookies = process.env.VERCEL === "1" || process.env.NEXTAUTH_URL?.startsWith("https://");
@@ -38,6 +39,14 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Mot de passe incorrect");
         }
 
+        // Charger les permissions supplementaires
+        const extraPerms = await prisma.userPermission.findMany({
+          where: { userId: user.id },
+          select: { permission: true },
+        });
+        const rolePerms = DEFAULT_PERMISSIONS[user.role] ?? [];
+        const allPerms = [...new Set([...rolePerms, ...extraPerms.map((p) => p.permission)])];
+
         return {
           id: user.id,
           nom: user.nom,
@@ -46,6 +55,8 @@ export const authOptions: NextAuthOptions = {
           username: user.username,
           role: user.role,
           antenneId: user.antenneId,
+          theme: user.theme,
+          permissions: allPerms,
         };
       },
     }),
@@ -94,6 +105,8 @@ export const authOptions: NextAuthOptions = {
         token.prenom = user.prenom;
         token.role = user.role;
         token.antenneId = user.antenneId;
+        token.theme = user.theme;
+        token.permissions = user.permissions;
 
         if (user.antenneId) {
           const antenne = await prisma.antenne.findUnique({
@@ -117,6 +130,8 @@ export const authOptions: NextAuthOptions = {
         role: token.role,
         antenneId: token.antenneId,
         antenneName: token.antenneName,
+        theme: token.theme,
+        permissions: token.permissions,
       };
       return session;
     },

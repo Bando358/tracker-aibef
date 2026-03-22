@@ -399,8 +399,10 @@ export async function fetchDashboardData(
 ): Promise<DashboardData> {
   switch (role) {
     case "SUPER_ADMIN":
+    case "ADMIN_SIMPLE":
       return fetchSuperAdminData();
     case "RESPONSABLE_ANTENNE":
+    case "ADMIN_ANTENNE":
       return fetchResponsableData(antenneId);
     default:
       return fetchEmployeData(userId);
@@ -712,7 +714,7 @@ async function fetchResponsableData(
   };
 }
 
-// ======================== SOIGNANT / ADMINISTRATIF ========================
+// ======================== PERSONNEL ========================
 
 async function fetchEmployeData(userId: string): Promise<DashboardData> {
   const { startOfWeek, endOfWeek } = getWeekRange();

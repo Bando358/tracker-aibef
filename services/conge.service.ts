@@ -21,11 +21,11 @@ export function canApprove(
   approverRole: Role,
   currentStatut: StatutConge
 ): boolean {
-  if (approverRole === "RESPONSABLE_ANTENNE" && currentStatut === "SOUMIS") {
+  if ((approverRole === "RESPONSABLE_ANTENNE" || approverRole === "ADMIN_ANTENNE") && currentStatut === "SOUMIS") {
     return true;
   }
   if (
-    approverRole === "SUPER_ADMIN" &&
+    (approverRole === "SUPER_ADMIN" || approverRole === "ADMIN_SIMPLE") &&
     (currentStatut === "SOUMIS" || currentStatut === "APPROUVE_RESPONSABLE")
   ) {
     return true;
@@ -40,7 +40,7 @@ export function canApprove(
  * - SUPER_ADMIN -> APPROUVE_FINAL
  */
 export function getNextApprovalStatus(approverRole: Role): StatutConge {
-  if (approverRole === "RESPONSABLE_ANTENNE") {
+  if (approverRole === "RESPONSABLE_ANTENNE" || approverRole === "ADMIN_ANTENNE") {
     return "APPROUVE_RESPONSABLE" as StatutConge;
   }
   return "APPROUVE_FINAL" as StatutConge;

@@ -116,7 +116,7 @@ export async function submitConge(
       const responsables = await prisma.user.findMany({
         where: {
           antenneId: conge.employe.antenneId,
-          role: "RESPONSABLE_ANTENNE",
+          role: { in: ["RESPONSABLE_ANTENNE", "ADMIN_ANTENNE"] },
           isActive: true,
         },
         select: { id: true },
@@ -166,7 +166,9 @@ export async function approveConge(
   try {
     const session = await checkActionPermission([
       "SUPER_ADMIN",
+      "ADMIN_SIMPLE",
       "RESPONSABLE_ANTENNE",
+      "ADMIN_ANTENNE",
     ]);
 
     const conge = await prisma.conge.findUnique({
@@ -238,7 +240,9 @@ export async function rejectConge(
   try {
     const session = await checkActionPermission([
       "SUPER_ADMIN",
+      "ADMIN_SIMPLE",
       "RESPONSABLE_ANTENNE",
+      "ADMIN_ANTENNE",
     ]);
 
     if (!commentaire || commentaire.trim().length === 0) {
@@ -324,7 +328,9 @@ export async function cancelConge(
     const isOwner = conge.employeId === session.id;
     const isManager =
       session.role === "SUPER_ADMIN" ||
-      session.role === "RESPONSABLE_ANTENNE";
+      session.role === "ADMIN_SIMPLE" ||
+      session.role === "RESPONSABLE_ANTENNE" ||
+      session.role === "ADMIN_ANTENNE";
 
     if (!isOwner && !isManager) {
       return { success: false, error: "Acces non autorise" };
@@ -383,7 +389,9 @@ export async function getCongesByEmploye(
   if (
     session.id !== userId &&
     session.role !== "SUPER_ADMIN" &&
-    session.role !== "RESPONSABLE_ANTENNE"
+    session.role !== "ADMIN_SIMPLE" &&
+    session.role !== "RESPONSABLE_ANTENNE" &&
+    session.role !== "ADMIN_ANTENNE"
   ) {
     throw new Error("Acces non autorise");
   }
@@ -437,13 +445,13 @@ export async function getCongesForApproval(
 
   const where: Prisma.CongeWhereInput = {};
 
-  if (session.role === "SUPER_ADMIN") {
+  if (session.role === "SUPER_ADMIN" || session.role === "ADMIN_SIMPLE") {
     where.statut = { in: ["SOUMIS", "APPROUVE_RESPONSABLE"] };
   } else {
     where.statut = "SOUMIS";
   }
 
-  if (session.role === "RESPONSABLE_ANTENNE" && session.antenneId) {
+  if ((session.role === "RESPONSABLE_ANTENNE" || session.role === "ADMIN_ANTENNE") && session.antenneId) {
     where.employe = { antenneId: session.antenneId };
   } else if (antenneId) {
     where.employe = { antenneId };
@@ -496,7 +504,9 @@ export async function getCongeBalance(
   if (
     session.id !== userId &&
     session.role !== "SUPER_ADMIN" &&
-    session.role !== "RESPONSABLE_ANTENNE"
+    session.role !== "ADMIN_SIMPLE" &&
+    session.role !== "RESPONSABLE_ANTENNE" &&
+    session.role !== "ADMIN_ANTENNE"
   ) {
     throw new Error("Acces non autorise");
   }
@@ -526,12 +536,19 @@ export async function getCongeBalance(
     select: { nbJours: true },
   });
 
+  // Utiliser le solde personnalise de l'employe
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { soldeCongesAnnuel: true },
+  });
+  const totalDays = user?.soldeCongesAnnuel ?? DEFAULT_ANNUAL_DAYS;
+
   const usedDays = approvedConges.reduce((sum, c) => sum + c.nbJours, 0);
   const pendingDays = pendingConges.reduce((sum, c) => sum + c.nbJours, 0);
-  const remainingDays = DEFAULT_ANNUAL_DAYS - usedDays;
+  const remainingDays = totalDays - usedDays;
 
   return {
-    totalDays: DEFAULT_ANNUAL_DAYS,
+    totalDays,
     usedDays,
     pendingDays,
     remainingDays: Math.max(0, remainingDays),

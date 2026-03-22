@@ -90,6 +90,67 @@ async function main() {
     },
   });
 
+  // ADMIN_SIMPLE (1) — acces a toutes les antennes, pas de scope antenne
+  const adminSimple = await prisma.user.create({
+    data: {
+      nom: "Konan",
+      prenom: "Sylvie",
+      email: "adminsimple@aibef.ci",
+      username: "adminsimple",
+      password: hashedAdmin,
+      role: "ADMIN_SIMPLE",
+      telephone: "+225 07 00 00 00 01",
+      typeJournee: "FIXE",
+      isActive: true,
+    },
+  });
+
+  // ADMIN_ANTENNE (3 — un par antenne, meme scope que RESPONSABLE_ANTENNE)
+  const gestAbidjan = await prisma.user.create({
+    data: {
+      nom: "Toure",
+      prenom: "Mariam",
+      email: "gest.abidjan@aibef.ci",
+      username: "gest.abidjan",
+      password: hashedPass,
+      role: "ADMIN_ANTENNE",
+      telephone: "+225 07 04 00 00 01",
+      antenneId: antenneAbidjan.id,
+      typeJournee: "FIXE",
+      isActive: true,
+    },
+  });
+
+  const gestBouake = await prisma.user.create({
+    data: {
+      nom: "Soro",
+      prenom: "Lacina",
+      email: "gest.bouake@aibef.ci",
+      username: "gest.bouake",
+      password: hashedPass,
+      role: "ADMIN_ANTENNE",
+      telephone: "+225 07 04 00 00 02",
+      antenneId: antenneBouake.id,
+      typeJournee: "FIXE",
+      isActive: true,
+    },
+  });
+
+  const gestSanPedro = await prisma.user.create({
+    data: {
+      nom: "Gnagbe",
+      prenom: "Yves",
+      email: "gest.sanpedro@aibef.ci",
+      username: "gest.sanpedro",
+      password: hashedPass,
+      role: "ADMIN_ANTENNE",
+      telephone: "+225 07 04 00 00 03",
+      antenneId: antenneSanPedro.id,
+      typeJournee: "FIXE",
+      isActive: true,
+    },
+  });
+
   // RESPONSABLE_ANTENNE (3)
   const respAbidjan = await prisma.user.create({
     data: {
@@ -136,7 +197,7 @@ async function main() {
     },
   });
 
-  // ADMINISTRATIF (3)
+  // PERSONNEL (3)
   const adminAbidjan = await prisma.user.create({
     data: {
       nom: "Yao",
@@ -144,7 +205,7 @@ async function main() {
       email: "admin.abidjan@aibef.ci",
       username: "admin.abidjan",
       password: hashedPass,
-      role: "ADMINISTRATIF",
+      role: "PERSONNEL",
       telephone: "+225 07 02 00 00 01",
       antenneId: antenneAbidjan.id,
       typeJournee: "FIXE",
@@ -159,7 +220,7 @@ async function main() {
       email: "admin.bouake@aibef.ci",
       username: "admin.bouake",
       password: hashedPass,
-      role: "ADMINISTRATIF",
+      role: "PERSONNEL",
       telephone: "+225 07 02 00 00 02",
       antenneId: antenneBouake.id,
       typeJournee: "FIXE",
@@ -174,7 +235,7 @@ async function main() {
       email: "admin.sanpedro@aibef.ci",
       username: "admin.sanpedro",
       password: hashedPass,
-      role: "ADMINISTRATIF",
+      role: "PERSONNEL",
       telephone: "+225 07 02 00 00 03",
       antenneId: antenneSanPedro.id,
       typeJournee: "FIXE",
@@ -182,7 +243,7 @@ async function main() {
     },
   });
 
-  // SOIGNANT (6 - 2 per antenne)
+  // PERSONNEL (6 - 2 per antenne)
   const soignant1Abidjan = await prisma.user.create({
     data: {
       nom: "Aka",
@@ -190,7 +251,7 @@ async function main() {
       email: "soignant1.abidjan@aibef.ci",
       username: "soignant1.abidjan",
       password: hashedPass,
-      role: "SOIGNANT",
+      role: "PERSONNEL",
       telephone: "+225 07 03 00 00 01",
       antenneId: antenneAbidjan.id,
       typeJournee: "FIXE",
@@ -205,7 +266,7 @@ async function main() {
       email: "soignant2.abidjan@aibef.ci",
       username: "soignant2.abidjan",
       password: hashedPass,
-      role: "SOIGNANT",
+      role: "PERSONNEL",
       telephone: "+225 07 03 00 00 02",
       antenneId: antenneAbidjan.id,
       typeJournee: "VARIABLE",
@@ -220,7 +281,7 @@ async function main() {
       email: "soignant1.bouake@aibef.ci",
       username: "soignant1.bouake",
       password: hashedPass,
-      role: "SOIGNANT",
+      role: "PERSONNEL",
       telephone: "+225 07 03 00 00 03",
       antenneId: antenneBouake.id,
       typeJournee: "FIXE",
@@ -235,7 +296,7 @@ async function main() {
       email: "soignant2.bouake@aibef.ci",
       username: "soignant2.bouake",
       password: hashedPass,
-      role: "SOIGNANT",
+      role: "PERSONNEL",
       telephone: "+225 07 03 00 00 04",
       antenneId: antenneBouake.id,
       typeJournee: "FIXE",
@@ -250,7 +311,7 @@ async function main() {
       email: "soignant1.sanpedro@aibef.ci",
       username: "soignant1.sanpedro",
       password: hashedPass,
-      role: "SOIGNANT",
+      role: "PERSONNEL",
       telephone: "+225 07 03 00 00 05",
       antenneId: antenneSanPedro.id,
       typeJournee: "FIXE",
@@ -265,7 +326,7 @@ async function main() {
       email: "soignant2.sanpedro@aibef.ci",
       username: "soignant2.sanpedro",
       password: hashedPass,
-      role: "SOIGNANT",
+      role: "PERSONNEL",
       telephone: "+225 07 03 00 00 06",
       antenneId: antenneSanPedro.id,
       typeJournee: "VARIABLE",
@@ -279,6 +340,7 @@ async function main() {
 
   const projet1 = await prisma.projet.create({
     data: {
+      code: "SEED-P1",
       nom: "Programme Sante Reproductive 2026",
       description:
         "Programme national de sante reproductive et planification familiale pour l'annee 2026",
@@ -290,6 +352,7 @@ async function main() {
 
   const projet2 = await prisma.projet.create({
     data: {
+      code: "SEED-P2",
       nom: "Campagne Vaccination HPV",
       description:
         "Campagne de vaccination contre le papillomavirus humain dans les zones rurales",
@@ -692,22 +755,26 @@ async function main() {
   console.log("");
   console.log("Comptes crees:");
   console.log("  SUPER_ADMIN:          admin / admin123");
+  console.log("  ADMIN_SIMPLE:         adminsimple / admin123");
+  console.log("  GEST. Abidjan:        gest.abidjan / pass123");
+  console.log("  GEST. Bouake:         gest.bouake / pass123");
+  console.log("  GEST. San Pedro:      gest.sanpedro / pass123");
   console.log("  RESP. Abidjan:        resp.abidjan / pass123");
   console.log("  RESP. Bouake:         resp.bouake / pass123");
   console.log("  RESP. San Pedro:      resp.sanpedro / pass123");
   console.log("  ADMIN. Abidjan:       admin.abidjan / pass123");
   console.log("  ADMIN. Bouake:        admin.bouake / pass123");
   console.log("  ADMIN. San Pedro:     admin.sanpedro / pass123");
-  console.log("  SOIGNANT 1 Abidjan:   soignant1.abidjan / pass123");
-  console.log("  SOIGNANT 2 Abidjan:   soignant2.abidjan / pass123");
-  console.log("  SOIGNANT 1 Bouake:    soignant1.bouake / pass123");
-  console.log("  SOIGNANT 2 Bouake:    soignant2.bouake / pass123");
-  console.log("  SOIGNANT 1 San Pedro: soignant1.sanpedro / pass123");
-  console.log("  SOIGNANT 2 San Pedro: soignant2.sanpedro / pass123");
+  console.log("  PERSONNEL 1 Abidjan:   soignant1.abidjan / pass123");
+  console.log("  PERSONNEL 2 Abidjan:   soignant2.abidjan / pass123");
+  console.log("  PERSONNEL 1 Bouake:    soignant1.bouake / pass123");
+  console.log("  PERSONNEL 2 Bouake:    soignant2.bouake / pass123");
+  console.log("  PERSONNEL 1 San Pedro: soignant1.sanpedro / pass123");
+  console.log("  PERSONNEL 2 San Pedro: soignant2.sanpedro / pass123");
   console.log("");
   console.log("Donnees crees:");
   console.log("  3 Antennes");
-  console.log("  13 Utilisateurs");
+  console.log("  17 Utilisateurs");
   console.log("  2 Projets");
   console.log("  4 Activites avec affectations");
   console.log("  3 Recommandations avec responsables");

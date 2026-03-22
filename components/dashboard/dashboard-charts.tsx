@@ -25,8 +25,6 @@ import {
 import { BarChart3, PieChart as PieChartIcon, TrendingUp, Building2 } from "lucide-react";
 import type { ChartDataPoint } from "@/types";
 
-// ======================== COLORS ========================
-
 const STATUS_COLORS: Record<string, string> = {
   PLANIFIEE: "hsl(var(--chart-1))",
   EN_COURS: "hsl(var(--chart-4))",
@@ -57,18 +55,15 @@ function getColor(dataPoint: ChartDataPoint, index: number): string {
   return PIE_COLORS[index % PIE_COLORS.length];
 }
 
-// ======================== TOOLTIP ========================
-
 const tooltipStyle = {
   borderRadius: "12px",
-  border: "none",
+  border: "1px solid hsl(var(--border) / 0.5)",
   backgroundColor: "hsl(var(--card))",
-  boxShadow: "0 10px 40px -10px hsl(var(--foreground) / 0.15)",
-  padding: "8px 12px",
+  boxShadow: "0 8px 32px -8px hsl(var(--foreground) / 0.12)",
+  padding: "10px 14px",
   color: "hsl(var(--foreground))",
+  fontSize: "13px",
 };
-
-// ======================== PROPS ========================
 
 interface DashboardChartsProps {
   activitesByStatus: ChartDataPoint[];
@@ -77,7 +72,40 @@ interface DashboardChartsProps {
   performanceByAntenne?: ChartDataPoint[];
 }
 
-// ======================== COMPONENT ========================
+function ChartCard({
+  icon: Icon,
+  iconBg = "bg-white dark:bg-slate-800 shadow-sm",
+  iconColor = "text-primary",
+  cardBg = "bg-gradient-to-br from-slate-50/80 to-white border-border/60 dark:from-slate-900/40 dark:to-slate-800/30 dark:border-slate-700/40",
+  title,
+  description,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  iconBg?: string;
+  iconColor?: string;
+  cardBg?: string;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className={`group overflow-hidden border shadow-sm transition-all duration-300 hover:shadow-md ${cardBg}`}>
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          <div className={`rounded-xl p-2 ${iconBg} transition-transform duration-300 group-hover:scale-110`}>
+            <Icon className={`h-4 w-4 ${iconColor}`} />
+          </div>
+          <div>
+            <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+            <CardDescription className="text-xs">{description}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-2">{children}</CardContent>
+    </Card>
+  );
+}
 
 export function DashboardCharts({
   activitesByStatus,
@@ -86,251 +114,182 @@ export function DashboardCharts({
   performanceByAntenne,
 }: DashboardChartsProps) {
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 stagger">
       {/* 1. Bar chart: Activites par statut */}
-      <Card className="overflow-hidden border-0 shadow-sm">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-primary/10 p-1.5">
-              <BarChart3 className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-sm font-semibold">Activites par statut</CardTitle>
-              <CardDescription className="text-xs">Repartition actuelle</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-2">
-          {activitesByStatus.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={activitesByStatus} barCategoryGap="20%">
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(var(--accent))" }} />
-                <Bar dataKey="value" name="Nombre" radius={[6, 6, 0, 0]}>
-                  {activitesByStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getColor(entry, index)} />
-                  ))}
-                  <LabelList dataKey="value" position="top" style={{ fontSize: 11, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChartState />
-          )}
-        </CardContent>
-      </Card>
+      <ChartCard
+        icon={BarChart3}
+        iconBg="bg-white dark:bg-orange-900/50 shadow-sm"
+        iconColor="text-orange-600 dark:text-orange-400"
+        cardBg="bg-gradient-to-br from-orange-50/60 to-amber-50/40 border-orange-200/50 dark:from-orange-950/30 dark:to-amber-950/20 dark:border-orange-800/30"
+        title="Activites par statut"
+        description="Repartition actuelle"
+      >
+        {activitesByStatus.length > 0 ? (
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={activitesByStatus} barCategoryGap="20%">
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} allowDecimals={false} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(var(--accent))", radius: 8 }} />
+              <Bar dataKey="value" name="Nombre" radius={[8, 8, 0, 0]}>
+                {activitesByStatus.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getColor(entry, index)} />
+                ))}
+                <LabelList dataKey="value" position="top" style={{ fontSize: 11, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <EmptyChartState />
+        )}
+      </ChartCard>
 
       {/* 2. Donut chart: Recommandations par statut */}
-      <Card className="overflow-hidden border-0 shadow-sm">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-primary/10 p-1.5">
-              <PieChartIcon className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-sm font-semibold">Recommandations par statut</CardTitle>
-              <CardDescription className="text-xs">Vue d&apos;ensemble</CardDescription>
+      <ChartCard
+        icon={PieChartIcon}
+        iconBg="bg-white dark:bg-indigo-900/50 shadow-sm"
+        iconColor="text-indigo-600 dark:text-indigo-400"
+        cardBg="bg-gradient-to-br from-indigo-50/60 to-violet-50/40 border-indigo-200/50 dark:from-indigo-950/30 dark:to-violet-950/20 dark:border-indigo-800/30"
+        title="Recommandations par statut"
+        description="Vue d'ensemble"
+      >
+        {recommandationsByStatus.length > 0 ? (
+          <div className="flex items-center">
+            <ResponsiveContainer width="60%" height={280}>
+              <PieChart>
+                <Pie
+                  data={recommandationsByStatus}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={95}
+                  paddingAngle={3}
+                  dataKey="value"
+                  nameKey="name"
+                  strokeWidth={0}
+                  label={(props) => {
+                    const { value, cx, cy, midAngle, outerRadius: or } = props as { value: number; cx: number; cy: number; midAngle: number; outerRadius: number };
+                    const RADIAN = Math.PI / 180;
+                    const r = or + 16;
+                    const x = cx + r * Math.cos(-midAngle * RADIAN);
+                    const y = cy + r * Math.sin(-midAngle * RADIAN);
+                    return value > 0 ? (
+                      <text x={x} y={y} textAnchor="middle" dominantBaseline="central" style={{ fontSize: 11, fontWeight: 700, fill: "hsl(var(--foreground))" }}>
+                        {value}
+                      </text>
+                    ) : null;
+                  }}
+                >
+                  {recommandationsByStatus.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getColor(entry, index)} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={tooltipStyle} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="flex w-[40%] flex-col gap-2.5">
+              {recommandationsByStatus.map((entry, index) => (
+                <div key={entry.name} className="flex items-center gap-2.5">
+                  <div
+                    className="h-3 w-3 rounded-full shadow-sm"
+                    style={{ backgroundColor: getColor(entry, index) }}
+                  />
+                  <span className="flex-1 truncate text-xs text-muted-foreground">
+                    {entry.name}
+                  </span>
+                  <span className="text-xs font-bold tabular-nums">{entry.value}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="pt-2">
-          {recommandationsByStatus.length > 0 ? (
-            <div className="flex items-center">
-              <ResponsiveContainer width="60%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={recommandationsByStatus}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={95}
-                    paddingAngle={3}
-                    dataKey="value"
-                    nameKey="name"
-                    strokeWidth={0}
-                    label={(props) => {
-                      const { value, cx, cy, midAngle, outerRadius: or } = props as { value: number; cx: number; cy: number; midAngle: number; outerRadius: number };
-                      const RADIAN = Math.PI / 180;
-                      const r = or + 16;
-                      const x = cx + r * Math.cos(-midAngle * RADIAN);
-                      const y = cy + r * Math.sin(-midAngle * RADIAN);
-                      return value > 0 ? (
-                        <text x={x} y={y} textAnchor="middle" dominantBaseline="central" style={{ fontSize: 11, fontWeight: 700, fill: "hsl(var(--foreground))" }}>
-                          {value}
-                        </text>
-                      ) : null;
-                    }}
-                  >
-                    {recommandationsByStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={getColor(entry, index)} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex w-[40%] flex-col gap-2">
-                {recommandationsByStatus.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center gap-2 text-sm">
-                    <div
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: getColor(entry, index) }}
-                    />
-                    <span className="truncate text-xs text-muted-foreground">
-                      {entry.name}
-                    </span>
-                    <span className="ml-auto font-semibold text-xs">{entry.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <EmptyChartState />
-          )}
-        </CardContent>
-      </Card>
+        ) : (
+          <EmptyChartState />
+        )}
+      </ChartCard>
 
       {/* 3. Area chart: Evolution mensuelle */}
-      <Card className="overflow-hidden border-0 shadow-sm">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-primary/10 p-1.5">
-              <TrendingUp className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-sm font-semibold">Evolution mensuelle</CardTitle>
-              <CardDescription className="text-xs">Activites sur 12 mois</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-2">
-          {activitesByMonth.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={activitesByMonth}>
-                <defs>
-                  <linearGradient id="colorActivites" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                  angle={-35}
-                  textAnchor="end"
-                  height={50}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  name="Activites"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2.5}
-                  fill="url(#colorActivites)"
-                  dot={{ r: 4, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "hsl(var(--background))" }}
-                  activeDot={{ r: 6, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "hsl(var(--background))" }}
-                >
-                  <LabelList dataKey="value" position="top" offset={10} style={{ fontSize: 10, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
-                </Area>
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChartState />
-          )}
-        </CardContent>
-      </Card>
+      <ChartCard
+        icon={TrendingUp}
+        iconBg="bg-white dark:bg-emerald-900/50 shadow-sm"
+        iconColor="text-emerald-600 dark:text-emerald-400"
+        cardBg="bg-gradient-to-br from-emerald-50/60 to-teal-50/40 border-emerald-200/50 dark:from-emerald-950/30 dark:to-teal-950/20 dark:border-emerald-800/30"
+        title="Evolution mensuelle"
+        description="Activites sur 12 mois"
+      >
+        {activitesByMonth.length > 0 ? (
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={activitesByMonth}>
+              <defs>
+                <linearGradient id="colorActivites" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.25} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tickLine={false}
+                axisLine={false}
+                angle={-35}
+                textAnchor="end"
+                height={50}
+              />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} allowDecimals={false} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Area
+                type="monotone"
+                dataKey="value"
+                name="Activites"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2.5}
+                fill="url(#colorActivites)"
+                dot={{ r: 4, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                activeDot={{ r: 6, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "hsl(var(--background))" }}
+              >
+                <LabelList dataKey="value" position="top" offset={10} style={{ fontSize: 10, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
+              </Area>
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <EmptyChartState />
+        )}
+      </ChartCard>
 
       {/* 4. Horizontal bar: Performance par antenne */}
       {performanceByAntenne && performanceByAntenne.length > 0 && (
-        <Card className="overflow-hidden border-0 shadow-sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-primary/10 p-1.5">
-                <Building2 className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-sm font-semibold">Performance par antenne</CardTitle>
-                <CardDescription className="text-xs">Nombre d&apos;activites</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={performanceByAntenne} layout="vertical" barCategoryGap="25%">
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                  horizontal={false}
-                />
-                <XAxis
-                  type="number"
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={110}
-                />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(var(--accent))" }} />
-                <Bar
-                  dataKey="value"
-                  name="Activites"
-                  fill="hsl(var(--primary))"
-                  radius={[0, 6, 6, 0]}
-                >
-                  <LabelList dataKey="value" position="right" style={{ fontSize: 11, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <ChartCard
+          icon={Building2}
+          iconBg="bg-white dark:bg-teal-900/50 shadow-sm"
+          iconColor="text-teal-600 dark:text-teal-400"
+          cardBg="bg-gradient-to-br from-teal-50/60 to-cyan-50/40 border-teal-200/50 dark:from-teal-950/30 dark:to-cyan-950/20 dark:border-teal-800/30"
+          title="Performance par antenne"
+          description="Nombre d'activites"
+        >
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={performanceByAntenne} layout="vertical" barCategoryGap="25%">
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} allowDecimals={false} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} width={110} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(var(--accent))", radius: 8 }} />
+              <Bar dataKey="value" name="Activites" fill="hsl(var(--primary))" radius={[0, 8, 8, 0]}>
+                <LabelList dataKey="value" position="right" style={{ fontSize: 11, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
       )}
     </div>
   );
 }
 
-// ======================== EMPTY STATE ========================
-
 function EmptyChartState() {
   return (
-    <div className="flex h-[280px] flex-col items-center justify-center gap-2 text-muted-foreground">
-      <BarChart3 className="h-10 w-10 opacity-20" />
-      <p className="text-sm">Aucune donnee disponible</p>
+    <div className="flex h-[280px] flex-col items-center justify-center gap-3 text-muted-foreground">
+      <div className="rounded-2xl bg-muted/50 p-4">
+        <BarChart3 className="h-8 w-8 opacity-30" />
+      </div>
+      <p className="text-sm font-medium">Aucune donnee disponible</p>
     </div>
   );
 }

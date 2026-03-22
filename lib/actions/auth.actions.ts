@@ -27,6 +27,34 @@ export async function checkActionPermission(
   return user;
 }
 
+export async function updateUserTheme(
+  theme: string
+): Promise<ActionResult> {
+  try {
+    const user = await getSessionUser();
+    if (!user) {
+      return { success: false, error: "Non authentifie" };
+    }
+
+    const validThemes = ["light", "dark", "theme-blue", "theme-green"];
+    if (!validThemes.includes(theme)) {
+      return { success: false, error: "Theme invalide" };
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { theme },
+    });
+
+    return { success: true, data: undefined };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur lors de la mise a jour du theme",
+    };
+  }
+}
+
 export async function registerUser(
   data: unknown
 ): Promise<ActionResult<{ id: string }>> {

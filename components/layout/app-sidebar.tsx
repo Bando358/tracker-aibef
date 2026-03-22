@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { PERMISSIONS, DEFAULT_PERMISSIONS } from "@/lib/constants";
 import {
   Sidebar,
   SidebarContent,
@@ -34,86 +35,71 @@ import {
   Clock,
   CalendarDays,
   Shield,
+  Fingerprint,
+  BarChart3,
   Settings,
   ChevronRight,
+  FolderKanban,
+  Plane,
+  GraduationCap,
+  Star,
+  GanttChart,
+  KeyRound,
 } from "lucide-react";
-import type { RoleType } from "@/types";
-
 interface NavItem {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
-  roles: RoleType[];
+  permission: string; // cle de permission requise
 }
 
 const MAIN_ITEMS: NavItem[] = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: LayoutDashboard,
-    roles: ["SUPER_ADMIN", "RESPONSABLE_ANTENNE", "ADMINISTRATIF", "SOIGNANT"],
-  },
-  {
-    title: "Activites",
-    url: "/activites",
-    icon: Activity,
-    roles: ["SUPER_ADMIN", "RESPONSABLE_ANTENNE"],
-  },
-  {
-    title: "Recommandations",
-    url: "/recommandations",
-    icon: ClipboardCheck,
-    roles: ["SUPER_ADMIN", "RESPONSABLE_ANTENNE"],
-  },
-  {
-    title: "Pointages",
-    url: "/pointages",
-    icon: Clock,
-    roles: ["SUPER_ADMIN", "RESPONSABLE_ANTENNE", "ADMINISTRATIF", "SOIGNANT"],
-  },
-  {
-    title: "Conges",
-    url: "/conges",
-    icon: CalendarDays,
-    roles: ["SUPER_ADMIN", "RESPONSABLE_ANTENNE", "ADMINISTRATIF", "SOIGNANT"],
-  },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, permission: "dashboard" },
+  { title: "Projets", url: "/projets", icon: FolderKanban, permission: "projets" },
+  { title: "Activites", url: "/activites", icon: Activity, permission: "activites" },
+  { title: "Recommandations", url: "/recommandations", icon: ClipboardCheck, permission: "recommandations" },
+  { title: "Chronogramme", url: "/chronogramme", icon: GanttChart, permission: "chronogramme" },
+  { title: "Missions", url: "/missions", icon: Plane, permission: "missions" },
+  { title: "Rapports", url: "/rapports", icon: BarChart3, permission: "rapports" },
+  { title: "Pointages", url: "/pointages", icon: Clock, permission: "pointages" },
+  { title: "Conges", url: "/conges", icon: CalendarDays, permission: "conges" },
 ];
 
 const SETTINGS_ITEMS: NavItem[] = [
-  {
-    title: "Antennes",
-    url: "/antennes",
-    icon: Building2,
-    roles: ["SUPER_ADMIN"],
-  },
-  {
-    title: "Employes",
-    url: "/employes",
-    icon: Users,
-    roles: ["SUPER_ADMIN", "RESPONSABLE_ANTENNE"],
-  },
-  {
-    title: "Journal d'audit",
-    url: "/audit-log",
-    icon: Shield,
-    roles: ["SUPER_ADMIN"],
-  },
+  { title: "Antennes", url: "/antennes", icon: Building2, permission: "antennes" },
+  { title: "Employes", url: "/employes", icon: Users, permission: "employes" },
+  { title: "Empreintes digitales", url: "/empreintes", icon: Fingerprint, permission: "empreintes" },
+  { title: "Formations", url: "/formations", icon: GraduationCap, permission: "formations" },
+  { title: "Evaluations", url: "/evaluations", icon: Star, permission: "evaluations" },
+  { title: "Permissions", url: "/permissions", icon: KeyRound, permission: "employes" },
+  { title: "Journal d'audit", url: "/audit-log", icon: Shield, permission: "audit-log" },
 ];
 
 export function AppSidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const role = session?.user?.role as RoleType | undefined;
+  const role = session?.user?.role as string | undefined;
+  const tokenPermissions = session?.user?.permissions as string[] | undefined;
+  const isSuperAdmin = role === "SUPER_ADMIN";
+
+  // Permissions effectives : du token si disponible, sinon fallback sur les permissions par defaut du role
+  const effectivePermissions = useMemo(() => {
+    if (!role) return [];
+    if (isSuperAdmin) return Object.values(PERMISSIONS);
+    if (tokenPermissions && tokenPermissions.length > 0) return tokenPermissions;
+    // Fallback pour ancien token sans permissions
+    return DEFAULT_PERMISSIONS[role] ?? [];
+  }, [role, tokenPermissions, isSuperAdmin]);
 
   const mainItems = useMemo(() => {
-    if (!role) return [];
-    return MAIN_ITEMS.filter((item) => item.roles.includes(role));
-  }, [role]);
+    if (!session?.user) return [];
+    return MAIN_ITEMS.filter((item) => effectivePermissions.includes(item.permission));
+  }, [session?.user, effectivePermissions]);
 
   const settingsItems = useMemo(() => {
-    if (!role) return [];
-    return SETTINGS_ITEMS.filter((item) => item.roles.includes(role));
-  }, [role]);
+    if (!session?.user) return [];
+    return SETTINGS_ITEMS.filter((item) => effectivePermissions.includes(item.permission));
+  }, [session?.user, effectivePermissions]);
 
   const isSettingsActive = settingsItems.some((item) =>
     pathname.startsWith(item.url)
@@ -122,13 +108,13 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+        <Link href="/dashboard" className="group flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/25 transition-transform duration-300 group-hover:scale-105">
             <Building2 className="h-4 w-4 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold">TRACKER-AIBEF</span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-sm font-bold tracking-tight">TRACKER-AIBEF</span>
+            <span className="text-[11px] text-sidebar-foreground/60">
               Pilotage strategique
             </span>
           </div>
@@ -136,7 +122,9 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
@@ -144,10 +132,11 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname.startsWith(item.url)}
+                    className="transition-all duration-200"
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -160,9 +149,9 @@ export function AppSidebar() {
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
-                      <SidebarMenuButton tooltip="Parametres">
+                      <SidebarMenuButton tooltip="Parametres" className="transition-all duration-200">
                         <Settings className="h-4 w-4" />
-                        <span>Parametres</span>
+                        <span className="font-medium">Parametres</span>
                         <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
@@ -173,6 +162,7 @@ export function AppSidebar() {
                             <SidebarMenuSubButton
                               asChild
                               isActive={pathname.startsWith(item.url)}
+                              className="transition-all duration-200"
                             >
                               <Link href={item.url}>
                                 <item.icon className="h-4 w-4" />

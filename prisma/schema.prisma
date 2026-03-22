@@ -11,9 +11,12 @@ datasource db {
 
 enum Role {
   SUPER_ADMIN
+  ADMIN_SIMPLE
   RESPONSABLE_ANTENNE
-  ADMINISTRATIF
-  SOIGNANT
+  ADMIN_ANTENNE
+  PERSONNEL
+  VOLONTAIRE
+  MAJ
 }
 
 enum TypeActivite {
@@ -37,11 +40,13 @@ enum Periodicite {
 }
 
 enum StatutActivite {
+  NON_PLANIFIEE
   PLANIFIEE
   EN_COURS
   REALISEE
   EN_RETARD
   ANNULEE
+  SUSPENDUE
   REPROGRAMMEE
 }
 
@@ -80,9 +85,14 @@ enum TypeJournee {
 
 enum StatutPointage {
   PRESENT
-  ABSENT
   RETARD
+  ABSENT
   CONGE
+  MISSION
+  ARRET_MALADIE
+  ABSENCE_AUTORISEE
+  ABSENCE_NON_AUTORISEE
+  FERIE
 }
 
 enum TypeConge {
@@ -126,6 +136,28 @@ enum ActionAudit {
   STATUS_CHANGE
 }
 
+enum EvenementEmpreinte {
+  ENROLLMENT
+  IDENTIFICATION_SUCCESS
+  IDENTIFICATION_FAIL
+  TEMPLATE_DELETED
+  POINTAGE_ARRIVEE_BIOMETRIQUE
+  POINTAGE_DEPART_BIOMETRIQUE
+}
+
+enum StatutMission {
+  PLANIFIEE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+enum StatutEvaluation {
+  BROUILLON
+  SOUMISE
+  VALIDEE
+}
+
 // ======================== MODELS ========================
 
 model Antenne {
@@ -161,16 +193,18 @@ model User {
   username  String   @unique
   password  String
   telephone String?
-  role      Role     @default(SOIGNANT)
+  role      Role     @default(PERSONNEL)
   isActive  Boolean  @default(true)
   image     String?
+  theme     String   @default("light")
 
   antenneId String?
   antenne   Antenne? @relation(fields: [antenneId], references: [id])
 
-  typeJournee    TypeJournee @default(FIXE)
-  heureDebutFixe String?     @default("08:00")
-  heureFinFixe   String?     @default("16:00")
+  typeJournee      TypeJournee @default(FIXE)
+  heureDebutFixe   String?     @default("08:00")
+  heureFinFixe     String?     @default("16:00")
+  empreinteEnrolee Boolean     @default(false)
 
   pointages                    Pointage[]
   congesDemandes               Conge[]                       @relation("CongeEmploye")
@@ -180,8 +214,42 @@ model User {
   notifications                Notification[]
   auditLogs                    AuditLog[]
   activitesCreees              Activite[]                    @relation("CreateurActivite")
+  empreintes                   Empreinte[]
+  empreintesEnrolees           Empreinte[]                   @relation("EmpreinteEnrolledBy")
+  empreinteLogs                EmpreinteLog[]                @relation("EmpreinteLogUser")
+  empreinteLogsAdmin           EmpreinteLog[]                @relation("EmpreinteLogAdmin")
+
+  // Nouvelles relations
+  dateEmbauche                 DateTime?
+  typeContrat                  String?
+  dateFinContrat               DateTime?
+  poste                        String?
+  service                      String?
+  soldeCongesAnnuel            Int         @default(30)
+
+  missionsResponsable          Mission[]                     @relation("MissionResponsable")
+  missionsCreees               Mission[]                     @relation("MissionCreateur")
+  formations                   FormationParticipant[]
+  evaluationsEmploye           EvaluationPerformance[]       @relation("EvaluationEmploye")
+  evaluationsEvaluateur        EvaluationPerformance[]       @relation("EvaluationEvaluateur")
+  permissions                  UserPermission[]
 
   @@map("users")
+}
+
+// ======================== PERMISSIONS ========================
+
+model UserPermission {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  userId     String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission String
+
+  @@unique([userId, permission])
+  @@index([userId])
+  @@map("user_permissions")
 }
 
 model Projet {
@@ -189,10 +257,14 @@ model Projet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  code        String   @unique
   nom         String
   description String?
   dateDebut   DateTime
   dateFin     DateTime?
+  budget      Float?
+  typeFonds   String?
+  bailleur    String?
   isActive    Boolean  @default(true)
 
   antenneId String?
@@ -214,7 +286,7 @@ model Activite {
   frequence       Frequence?
   periodicite     Periodicite?
   jourPeriodicite Int?
-  statut          StatutActivite @default(PLANIFIEE)
+  statut          StatutActivite @default(NON_PLANIFIEE)
   dateDebut    DateTime?
   dateFin      DateTime?
   dateRealisee DateTime?
@@ -242,14 +314,33 @@ model ActiviteAntenne {
   activite      Activite @relation(fields: [activiteId], references: [id], onDelete: Cascade)
   antenneId     String
   antenne       Antenne  @relation(fields: [antenneId], references: [id], onDelete: Cascade)
-  responsableId String
-  responsable   User     @relation("ResponsableActivite", fields: [responsableId], references: [id])
+  responsableId String?
+  responsable   User?    @relation("ResponsableActivite", fields: [responsableId], references: [id])
 
   statut      StatutActivite @default(PLANIFIEE)
   commentaire String?
 
+  periodes ActiviteAntennePeriode[]
+
   @@unique([activiteId, antenneId])
   @@map("activite_antennes")
+}
+
+model ActiviteAntennePeriode {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activiteAntenneId String
+  activiteAntenne   ActiviteAntenne @relation(fields: [activiteAntenneId], references: [id], onDelete: Cascade)
+
+  dateDebut    DateTime
+  dateFin      DateTime
+  statut       StatutActivite @default(PLANIFIEE)
+  dateRealisee DateTime?
+  commentaire  String?
+
+  @@map("activite_antenne_periodes")
 }
 
 model ActiviteHistorique {
@@ -278,9 +369,10 @@ model Recommandation {
   statut         StatutRecommandation @default(EN_ATTENTE)
   priorite       Priorite             @default(MOYENNE)
   dateEcheance   DateTime
-  dateResolution DateTime?
-  frequence      Frequence?
-  observations   String?
+  dateResolution    DateTime?
+  frequence         Frequence?
+  tauxMiseEnOeuvre  Int            @default(0)
+  observations      String?
 
   activiteId String?
   activite   Activite? @relation(fields: [activiteId], references: [id])
@@ -328,7 +420,10 @@ model Pointage {
 
   date          DateTime       @db.Date
   heureArrivee  DateTime?
+  pauseDebut    DateTime?
+  pauseFin      DateTime?
   heureDepart   DateTime?
+  totalHeures   Float          @default(0)
   statut        StatutPointage @default(PRESENT)
   retardMinutes Int            @default(0)
   heuresSupp    Float          @default(0)
@@ -384,11 +479,12 @@ model AuditLog {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 
-  action    ActionAudit
-  entite    String
-  entiteId  String?
-  details   String?
-  ipAddress String?
+  action       ActionAudit
+  entite       String
+  entiteId     String?
+  details      String?
+  previousData String?    @db.Text
+  ipAddress    String?
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
@@ -396,4 +492,125 @@ model AuditLog {
   @@index([entite, entiteId])
   @@index([userId])
   @@map("audit_logs")
+}
+
+// ======================== BIOMETRIE ========================
+
+model Empreinte {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  templateData String  @db.Text
+  doigt        Int
+  qualite      Int
+  actif        Boolean @default(true)
+
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrolledById String
+  enrolledBy   User   @relation("EmpreinteEnrolledBy", fields: [enrolledById], references: [id])
+
+  @@unique([userId, doigt])
+  @@map("empreintes")
+}
+
+model EmpreinteLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  evenement EvenementEmpreinte
+  score     Int?
+  details   String?
+
+  userId  String?
+  user    User?   @relation("EmpreinteLogUser", fields: [userId], references: [id])
+  adminId String?
+  admin   User?   @relation("EmpreinteLogAdmin", fields: [adminId], references: [id])
+
+  @@index([userId])
+  @@index([evenement])
+  @@map("empreinte_logs")
+}
+
+// ======================== MISSIONS ========================
+
+model Mission {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  objet        String
+  lieu         String
+  dateDebut    DateTime
+  dateFin      DateTime
+  perDiem      Float?
+  statut       StatutMission @default(PLANIFIEE)
+  observations String?
+  rapportMission String?     @db.Text
+
+  responsableId String
+  responsable   User   @relation("MissionResponsable", fields: [responsableId], references: [id])
+  createurId    String
+  createur      User   @relation("MissionCreateur", fields: [createurId], references: [id])
+
+  @@map("missions")
+}
+
+// ======================== FORMATIONS ========================
+
+model Formation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  titre       String
+  description String?
+  organisme   String?
+  lieu        String?
+  dateDebut   DateTime
+  dateFin     DateTime
+  cout        Float?
+
+  participants FormationParticipant[]
+
+  @@map("formations")
+}
+
+model FormationParticipant {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  formationId String
+  formation   Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  attestation Boolean   @default(false)
+
+  @@unique([formationId, userId])
+  @@map("formation_participants")
+}
+
+// ======================== EVALUATION PERFORMANCE ========================
+
+model EvaluationPerformance {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  periode      String
+  dateEval     DateTime
+  statut       StatutEvaluation @default(BROUILLON)
+  noteGlobale  Float?
+  commentaire  String?          @db.Text
+  objectifs    String?          @db.Text
+  pointsForts  String?          @db.Text
+  axesProgres  String?          @db.Text
+
+  employeId    String
+  employe      User   @relation("EvaluationEmploye", fields: [employeId], references: [id])
+  evaluateurId String
+  evaluateur   User   @relation("EvaluationEvaluateur", fields: [evaluateurId], references: [id])
+
+  @@map("evaluations_performance")
 }

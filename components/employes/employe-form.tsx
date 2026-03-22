@@ -68,7 +68,7 @@ export function EmployeForm({ initialData, onSuccess }: EmployeFormProps) {
       email: initialData?.email ?? "",
       username: initialData?.username ?? "",
       password: "",
-      role: (initialData?.role ?? "SOIGNANT") as RoleType,
+      role: (initialData?.role ?? "PERSONNEL") as RoleType,
       antenneId: initialData?.antenneId ?? null,
       typeJournee: (initialData?.typeJournee ?? "FIXE") as TypeJourneeType,
       telephone: initialData?.telephone ?? "",
@@ -93,7 +93,7 @@ export function EmployeForm({ initialData, onSuccess }: EmployeFormProps) {
     startTransition(async () => {
       const submitData = {
         ...values,
-        antenneId: selectedRole === "SUPER_ADMIN" ? null : values.antenneId,
+        antenneId: selectedRole === "SUPER_ADMIN" || selectedRole === "ADMIN_SIMPLE" ? null : values.antenneId,
         telephone: values.telephone || null,
       };
 
@@ -339,8 +339,8 @@ export function EmployeForm({ initialData, onSuccess }: EmployeFormProps) {
                 )}
               />
 
-              {/* Antenne - hidden when SUPER_ADMIN */}
-              {selectedRole !== "SUPER_ADMIN" && (
+              {/* Antenne - hidden when SUPER_ADMIN or ADMIN_SIMPLE */}
+              {selectedRole !== "SUPER_ADMIN" && selectedRole !== "ADMIN_SIMPLE" && (
                 <FormField
                   control={form.control}
                   name="antenneId"

@@ -12,7 +12,7 @@ export default function ActivitiesLayout({
       <AppSidebar />
       <SidebarInset>
         <SiteHeader />
-        <div className="p-4 md:p-6">{children}</div>
+        <div className="p-4 md:p-6 overflow-x-hidden">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -13,7 +13,7 @@ export function computeActiviteStatus(
   const now = new Date();
   const isOverdue = now > new Date(dateFin);
   const isTerminal =
-    currentStatut === "REALISEE" || currentStatut === "ANNULEE";
+    currentStatut === "REALISEE" || currentStatut === "ANNULEE" || currentStatut === "SUSPENDUE" || currentStatut === "REPROGRAMMEE";
 
   if (isOverdue && !isTerminal) {
     return "EN_RETARD";
@@ -38,6 +38,46 @@ export function shouldAutoDetectLate(activite: {
   const isAlreadyLate = activite.statut === "EN_RETARD";
 
   return isOverdue && !isTerminal && !isAlreadyLate;
+}
+
+/**
+ * Calcule le statut global d'une activite PERIODIQUE
+ * a partir de l'etat de toutes ses periodes.
+ *
+ * Regles :
+ * - Aucune periode → NON_PLANIFIEE
+ * - Toutes PLANIFIEE → PLANIFIEE
+ * - Au moins une EN_RETARD → EN_RETARD
+ * - Toutes REALISEE → REALISEE
+ * - Mix (au moins une EN_COURS ou REALISEE) → EN_COURS
+ */
+export function computePeriodiqueStatus(
+  periodeStatuts: StatutActivite[],
+  currentStatut: StatutActivite
+): StatutActivite {
+  // Ne pas toucher aux statuts manuels exceptionnels
+  if (
+    currentStatut === "SUSPENDUE" ||
+    currentStatut === "ANNULEE" ||
+    currentStatut === "REPROGRAMMEE"
+  ) {
+    return currentStatut;
+  }
+
+  if (periodeStatuts.length === 0) return "NON_PLANIFIEE";
+
+  const hasRetard = periodeStatuts.some((s) => s === "EN_RETARD");
+  const allRealisee = periodeStatuts.every((s) => s === "REALISEE");
+  const allPlanifiee = periodeStatuts.every((s) => s === "PLANIFIEE");
+  const hasEnCours = periodeStatuts.some((s) => s === "EN_COURS");
+  const hasRealisee = periodeStatuts.some((s) => s === "REALISEE");
+
+  if (hasRetard) return "EN_RETARD";
+  if (allRealisee) return "REALISEE";
+  if (allPlanifiee) return "PLANIFIEE";
+  if (hasEnCours || hasRealisee) return "EN_COURS";
+
+  return "PLANIFIEE";
 }
 
 /**

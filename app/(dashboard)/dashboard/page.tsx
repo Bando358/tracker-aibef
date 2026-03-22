@@ -11,9 +11,12 @@ export const metadata = {
 
 const PAGE_TITLES: Record<string, string> = {
   SUPER_ADMIN: "Dashboard National",
+  ADMIN_SIMPLE: "Dashboard National",
   RESPONSABLE_ANTENNE: "Dashboard Antenne",
-  ADMINISTRATIF: "Mon Espace",
-  SOIGNANT: "Mon Espace",
+  ADMIN_ANTENNE: "Dashboard Antenne",
+  PERSONNEL: "Mon Espace",
+  VOLONTAIRE: "Mon Espace",
+  MAJ: "Mon Espace",
 };
 
 function getGreeting(): string {
@@ -36,26 +39,40 @@ export default async function DashboardPage() {
   const greeting = getGreeting();
   const displayName = user.nom ?? user.username ?? "";
   const subtitle =
-    user.role === "RESPONSABLE_ANTENNE" && user.antenneName
+    (user.role === "RESPONSABLE_ANTENNE" || user.role === "ADMIN_ANTENNE") && user.antenneName
       ? `Antenne de ${user.antenneName}`
       : undefined;
 
   return (
-    <div className="space-y-6">
-      {/* Welcome header */}
-      <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6">
-        <h1 className="text-2xl font-bold tracking-tight">
-          {greeting}, {displayName}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {title}
-          {subtitle && (
-            <span className="ml-1 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              {subtitle}
+    <div className="space-y-8 animate-fade-in">
+      {/* Premium welcome hero */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white shadow-lg shadow-blue-600/25">
+        {/* Decorative elements */}
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10" />
+        <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/5" />
+        <div className="absolute right-8 top-8 h-3 w-3 rounded-full bg-white/20" />
+        <div className="absolute right-20 top-16 h-2 w-2 rounded-full bg-white/15" />
+        <div className="absolute left-1/3 -top-10 h-28 w-28 rounded-full bg-white/[0.07]" />
+
+        <div className="relative">
+          <p className="text-sm font-medium text-white/70">{title}</p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">
+            {greeting},{" "}
+            <span className="text-white">
+              {displayName}
             </span>
+          </h1>
+          {subtitle && (
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5">
+              <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+              <span className="text-sm font-medium text-white">
+                {subtitle}
+              </span>
+            </div>
           )}
-        </p>
+        </div>
       </div>
+
       <DashboardClient data={data} role={user.role} />
     </div>
   );

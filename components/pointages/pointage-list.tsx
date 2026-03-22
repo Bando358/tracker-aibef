@@ -27,7 +27,10 @@ interface Pointage {
   id: string;
   date: Date;
   heureArrivee: Date | null;
+  pauseDebut: Date | null;
+  pauseFin: Date | null;
   heureDepart: Date | null;
+  totalHeures: number;
   statut: StatutPointageType;
   retardMinutes: number;
   heuresSupp: number;
@@ -69,6 +72,31 @@ const columns: ColumnDef<Pointage>[] = [
       row.original.heureDepart
         ? formatTimeFr(row.original.heureDepart)
         : "-",
+  },
+  {
+    id: "pause",
+    header: "Pause",
+    cell: ({ row }) => {
+      if (!row.original.pauseDebut) return "-";
+      return (
+        <span className="tabular-nums text-xs">
+          {formatTimeFr(row.original.pauseDebut)}
+          {row.original.pauseFin ? ` - ${formatTimeFr(row.original.pauseFin)}` : " ..."}
+        </span>
+      );
+    },
+  },
+  {
+    accessorKey: "totalHeures",
+    header: "Total (h)",
+    cell: ({ row }) =>
+      row.original.totalHeures > 0 ? (
+        <span className="font-medium tabular-nums">
+          {row.original.totalHeures.toFixed(1)}
+        </span>
+      ) : (
+        "-"
+      ),
   },
   {
     accessorKey: "statut",
@@ -133,33 +161,40 @@ export function PointageList({
     totalPages: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [pointageResult, summaryResult] = await Promise.all([
-        getPointagesByUser(userId, month, year, pagination.page, pagination.pageSize),
-        getPointageSummary(userId, month, year),
-      ]);
-
-      setPointages(pointageResult.data as Pointage[]);
-      setPagination({
-        page: pointageResult.page,
-        pageSize: pointageResult.pageSize,
-        total: pointageResult.total,
-        totalPages: pointageResult.totalPages,
-      });
-      setSummary(summaryResult);
-    } catch {
-      // Errors handled silently; empty state shown
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId, month, year, pagination.page, pagination.pageSize]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+
+    async function fetchData() {
+      try {
+        const [pointageResult, summaryResult] = await Promise.all([
+          getPointagesByUser(userId, month, year, page, pageSize),
+          getPointageSummary(userId, month, year),
+        ]);
+
+        if (!cancelled) {
+          setPointages(pointageResult.data as Pointage[]);
+          setPagination({
+            page: pointageResult.page,
+            pageSize: pointageResult.pageSize,
+            total: pointageResult.total,
+            totalPages: pointageResult.totalPages,
+          });
+          setSummary(summaryResult);
+        }
+      } catch {
+        // Errors handled silently; empty state shown
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
     fetchData();
-  }, [fetchData]);
+
+    return () => { cancelled = true; };
+  }, [userId, month, year, page, pageSize]);
 
   // Generer les annees disponibles
   const currentYear = now.getFullYear();
@@ -237,7 +272,7 @@ export function PointageList({
           value={String(month)}
           onValueChange={(v) => {
             setMonth(Number(v));
-            setPagination((prev) => ({ ...prev, page: 1 }));
+            setPage(1);
           }}
         >
           <SelectTrigger className="w-[180px]">
@@ -256,7 +291,7 @@ export function PointageList({
           value={String(year)}
           onValueChange={(v) => {
             setYear(Number(v));
-            setPagination((prev) => ({ ...prev, page: 1 }));
+            setPage(1);
           }}
         >
           <SelectTrigger className="w-[120px]">
@@ -278,12 +313,8 @@ export function PointageList({
         data={pointages}
         isLoading={isLoading}
         pagination={pagination}
-        onPageChange={(page) =>
-          setPagination((prev) => ({ ...prev, page }))
-        }
-        onPageSizeChange={(pageSize) =>
-          setPagination((prev) => ({ ...prev, page: 1, pageSize }))
-        }
+        onPageChange={(p) => setPage(p)}
+        onPageSizeChange={(ps) => { setPage(1); setPageSize(ps); }}
       />
     </div>
   );

@@ -12,7 +12,9 @@ export default function DashboardLayout({
       <AppSidebar />
       <SidebarInset>
         <SiteHeader />
-        <div className="p-4 md:p-6">{children}</div>
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -12,6 +12,8 @@ declare module "next-auth" {
       role: Role;
       antenneId: string | null;
       antenneName: string | null;
+      theme: string;
+      permissions: string[];
       image?: string | null;
     };
   }
@@ -24,6 +26,8 @@ declare module "next-auth" {
     username: string;
     role: Role;
     antenneId: string | null;
+    theme: string;
+    permissions: string[];
   }
 }
 
@@ -35,5 +39,7 @@ declare module "next-auth/jwt" {
     role: Role;
     antenneId: string | null;
     antenneName: string | null;
+    theme: string;
+    permissions: string[];
   }
 }

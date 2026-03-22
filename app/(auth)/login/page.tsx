@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Building2 } from "lucide-react";
+import { Loader2, LogIn, Lock, User } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -56,61 +56,94 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader className="text-center">
-        <div className="flex justify-center mb-4">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Building2 className="h-8 w-8 text-primary" />
-          </div>
+    <div className="space-y-8">
+      {/* Mobile-only brand */}
+      <div className="text-center lg:hidden">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
+          <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
         </div>
-        <CardTitle className="text-2xl">TRACKER-AIBEF</CardTitle>
-        <CardDescription>
-          Connectez-vous a votre espace de travail
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="username">Nom d&apos;utilisateur</Label>
-            <Input
-              id="username"
-              placeholder="votre.identifiant"
-              {...register("username")}
+        <h1 className="text-xl font-bold">TRACKER-AIBEF</h1>
+        <p className="text-sm text-muted-foreground">Pilotage strategique</p>
+      </div>
+
+      <Card className="border-0 shadow-xl shadow-black/5 lg:border lg:shadow-lg">
+        <CardHeader className="space-y-1 pb-4">
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            Connexion
+          </CardTitle>
+          <CardDescription>
+            Entrez vos identifiants pour acceder a votre espace
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-sm font-medium">
+                Identifiant
+              </Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="username"
+                  placeholder="votre.identifiant"
+                  className="h-11 pl-10"
+                  {...register("username")}
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.username && (
+                <p className="text-sm text-destructive">
+                  {errors.username.message}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">
+                Mot de passe
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  className="h-11 pl-10"
+                  {...register("password")}
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+            <Button
+              type="submit"
+              className="h-11 w-full gap-2 text-sm font-semibold shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30"
               disabled={isLoading}
-            />
-            {errors.username && (
-              <p className="text-sm text-destructive">
-                {errors.username.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Mot de passe</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••"
-              {...register("password")}
-              disabled={isLoading}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Connexion...
-              </>
-            ) : (
-              "Se connecter"
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Connexion en cours...
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-4 w-4" />
+                  Se connecter
+                </>
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <p className="text-center text-xs text-muted-foreground lg:hidden">
+        &copy; {new Date().getFullYear()} AIBEF — Tous droits reserves
+      </p>
+    </div>
   );
 }

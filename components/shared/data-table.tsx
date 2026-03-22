@@ -76,8 +76,8 @@ export function DataTable<TData, TValue>({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-10 w-full max-w-sm" />
-        <div className="rounded-md border">
+        <Skeleton className="h-10 w-full max-w-sm rounded-xl" />
+        <div className="rounded-xl border border-border/60 overflow-hidden">
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-12 w-full" />
           ))}
@@ -91,23 +91,23 @@ export function DataTable<TData, TValue>({
       {onSearch && (
         <div className="flex items-center gap-2">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
               value={searchValue}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-8"
+              className="h-10 rounded-xl border-border/60 pl-9"
             />
           </div>
         </div>
       )}
-      <div className="rounded-md border">
+      <div className="rounded-xl border border-border/60 overflow-hidden">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="bg-muted/30 hover:bg-muted/30">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="font-semibold">
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -122,7 +122,7 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow key={row.id} className="transition-colors">
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
@@ -137,9 +137,14 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
+                  className="h-24 text-center"
                 >
-                  Aucun resultat.
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-muted/50 flex items-center justify-center">
+                      <div className="h-3 w-3 rounded-full bg-muted-foreground/20" />
+                    </div>
+                    <span className="text-sm text-muted-foreground">Aucun resultat.</span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
@@ -148,7 +153,7 @@ export function DataTable<TData, TValue>({
       </div>
       {pagination && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground tabular-nums">
             {pagination.total} resultat(s) - Page {pagination.page} sur{" "}
             {pagination.totalPages}
           </div>
@@ -157,7 +162,7 @@ export function DataTable<TData, TValue>({
               value={String(pagination.pageSize)}
               onValueChange={(v) => onPageSizeChange?.(Number(v))}
             >
-              <SelectTrigger className="h-8 w-[70px]">
+              <SelectTrigger className="h-8 w-[70px] rounded-lg border-border/60">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -171,7 +176,7 @@ export function DataTable<TData, TValue>({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-lg border-border/60"
               onClick={() => onPageChange?.(pagination.page - 1)}
               disabled={pagination.page <= 1}
             >
@@ -180,7 +185,7 @@ export function DataTable<TData, TValue>({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-lg border-border/60"
               onClick={() => onPageChange?.(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages}
             >

@@ -13,9 +13,10 @@ import {
   activiteSchema,
   type ActiviteFormValues,
 } from "@/lib/validations/activite.schema";
-import { createActivite } from "@/lib/actions/activite.actions";
+import { createActivite, updateActivite } from "@/lib/actions/activite.actions";
 import { getAllAntennes } from "@/lib/actions/antenne.actions";
 import { getEmployesByAntenne } from "@/lib/actions/employe.actions";
+import { getProjetsForSelect } from "@/lib/actions/projet.actions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,12 @@ import type { TypeActiviteType, FrequenceType, PeriodiciteType } from "@/types";
 // ------------------------------------------------------------------
 // Types
 // ------------------------------------------------------------------
+interface ProjetOption {
+  id: string;
+  code: string;
+  nom: string;
+}
+
 interface AntenneOption {
   id: string;
   nom: string;
@@ -76,9 +83,9 @@ interface ActiviteFormProps {
     projetId: string | null;
     activiteAntennes: Array<{
       antenneId: string;
-      responsableId: string;
+      responsableId: string | null;
       antenne: { id: string; nom: string; code: string };
-      responsable: { id: string; nom: string; prenom: string };
+      responsable: { id: string; nom: string; prenom: string } | null;
     }>;
   };
   onSuccess?: () => void;
@@ -90,6 +97,7 @@ interface ActiviteFormProps {
 export function ActiviteForm({ initialData, onSuccess }: ActiviteFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [projets, setProjets] = useState<ProjetOption[]>([]);
   const [antennes, setAntennes] = useState<AntenneOption[]>([]);
   const [employesByAntenne, setEmployesByAntenne] = useState<
     Record<string, EmployeOption[]>
@@ -116,10 +124,10 @@ export function ActiviteForm({ initialData, onSuccess }: ActiviteFormProps) {
         : undefined as unknown as Date,
       budget: initialData?.budget ?? undefined,
       projetId: initialData?.projetId ?? undefined,
-      antenneAssignments: initialData?.activiteAntennes?.map((aa: { antenneId: string; responsableId: string }) => ({
+      antenneAssignments: initialData?.activiteAntennes?.map((aa) => ({
         antenneId: aa.antenneId,
-        responsableId: aa.responsableId,
-      })) ?? [{ antenneId: "", responsableId: "" }],
+        responsableId: aa.responsableId ?? "",
+      })) ?? [],
     },
   });
 
@@ -131,19 +139,23 @@ export function ActiviteForm({ initialData, onSuccess }: ActiviteFormProps) {
     name: "antenneAssignments",
   });
 
-  // Charger les antennes au montage
+  // Charger les projets et antennes au montage
   useEffect(() => {
-    async function loadAntennes() {
+    async function loadData() {
       try {
-        const result = await getAllAntennes({ pageSize: 200 });
+        const [antennesResult, projetsResult] = await Promise.all([
+          getAllAntennes({ pageSize: 200 }),
+          getProjetsForSelect(),
+        ]);
         setAntennes(
-          result.data.map((a) => ({ id: a.id, nom: a.nom, code: a.code }))
+          antennesResult.data.map((a) => ({ id: a.id, nom: a.nom, code: a.code }))
         );
+        setProjets(projetsResult);
       } catch {
-        toast.error("Erreur lors du chargement des antennes");
+        toast.error("Erreur lors du chargement des donnees");
       }
     }
-    loadAntennes();
+    loadData();
   }, []);
 
   // Charger les employes initiaux si edition
@@ -179,11 +191,13 @@ export function ActiviteForm({ initialData, onSuccess }: ActiviteFormProps) {
 
   function onSubmit(values: ActiviteFormValues) {
     startTransition(async () => {
-      const result = await createActivite(values);
+      const result = initialData
+        ? await updateActivite(initialData.id, values)
+        : await createActivite(values);
       if (result.success) {
-        toast.success("Activite creee avec succes");
+        toast.success(initialData ? "Activite modifiee" : "Activite creee");
         onSuccess?.();
-        router.push("/activites");
+        router.push(initialData ? `/activites/${initialData.id}` : "/activites");
         router.refresh();
       } else {
         toast.error(result.error);
@@ -445,6 +459,36 @@ export function ActiviteForm({ initialData, onSuccess }: ActiviteFormProps) {
               </div>
             )}
 
+            {/* Projet */}
+            <FormField
+              control={form.control}
+              name="projetId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Projet</FormLabel>
+                  <Select
+                    onValueChange={(val) => field.onChange(val === "__none__" ? null : val)}
+                    value={field.value ?? "__none__"}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectionner un projet (optionnel)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="__none__">Aucun projet</SelectItem>
+                      {projets.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.code} – {p.nom}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Budget */}
             <FormField
               control={form.control}
@@ -554,10 +598,12 @@ export function ActiviteForm({ initialData, onSuccess }: ActiviteFormProps) {
                       name={`antenneAssignments.${index}.responsableId`}
                       render={({ field: selectField }) => (
                         <FormItem className="flex-1">
-                          <FormLabel>Responsable *</FormLabel>
+                          <FormLabel>Responsable</FormLabel>
                           <Select
-                            onValueChange={selectField.onChange}
-                            value={selectField.value}
+                            onValueChange={(val) =>
+                              selectField.onChange(val === "__none__" ? "" : val)
+                            }
+                            value={selectField.value || "__none__"}
                             disabled={!selectedAntenneId || isLoadingRow}
                           >
                             <FormControl>
@@ -572,6 +618,9 @@ export function ActiviteForm({ initialData, onSuccess }: ActiviteFormProps) {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
+                              <SelectItem value="__none__">
+                                A definir ulterieurement
+                              </SelectItem>
                               {employesForRow.map((emp) => (
                                 <SelectItem key={emp.id} value={emp.id}>
                                   {emp.prenom} {emp.nom}
@@ -585,17 +634,15 @@ export function ActiviteForm({ initialData, onSuccess }: ActiviteFormProps) {
                     />
 
                     {/* Bouton supprimer */}
-                    {fields.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => remove(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => remove(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               );

@@ -73,10 +73,10 @@ export async function getAllRecommandations(
 
   const where: Record<string, unknown> = {};
 
-  // Role scoping: RESPONSABLE_ANTENNE sees only their antenne's recommandations
-  if (user.role === "RESPONSABLE_ANTENNE" && user.antenneId) {
+  // Role scoping: RESPONSABLE_ANTENNE/ADMIN_ANTENNE sees only their antenne's recommandations
+  if ((user.role === "RESPONSABLE_ANTENNE" || user.role === "ADMIN_ANTENNE") && user.antenneId) {
     where.antenneId = user.antenneId;
-  } else if (user.role === "SOIGNANT" || user.role === "ADMINISTRATIF") {
+  } else if (user.role === "PERSONNEL") {
     // Regular employees only see recommandations they are assigned to
     where.responsables = {
       some: { userId: user.id },
@@ -170,7 +170,9 @@ export async function createRecommandation(
   try {
     const session = await checkActionPermission([
       "SUPER_ADMIN",
+      "ADMIN_SIMPLE",
       "RESPONSABLE_ANTENNE",
+      "ADMIN_ANTENNE",
     ]);
 
     const parsed = recommandationSchema.parse(data);
@@ -263,7 +265,9 @@ export async function updateRecommandationStatut(
   try {
     const session = await checkActionPermission([
       "SUPER_ADMIN",
+      "ADMIN_SIMPLE",
       "RESPONSABLE_ANTENNE",
+      "ADMIN_ANTENNE",
     ]);
 
     const existing = await prisma.recommandation.findUnique({
@@ -344,7 +348,9 @@ export async function resolveRecommandation(
   try {
     const session = await checkActionPermission([
       "SUPER_ADMIN",
+      "ADMIN_SIMPLE",
       "RESPONSABLE_ANTENNE",
+      "ADMIN_ANTENNE",
     ]);
 
     const existing = await prisma.recommandation.findUnique({
@@ -410,7 +416,7 @@ export async function deleteRecommandation(
   id: string
 ): Promise<ActionResult<void>> {
   try {
-    const session = await checkActionPermission(["SUPER_ADMIN"]);
+    const session = await checkActionPermission(["SUPER_ADMIN", "ADMIN_SIMPLE"]);
 
     const existing = await prisma.recommandation.findUnique({
       where: { id },
@@ -452,7 +458,7 @@ export async function detectLateRecommandations(): Promise<
   ActionResult<{ count: number }>
 > {
   try {
-    const session = await checkActionPermission(["SUPER_ADMIN"]);
+    const session = await checkActionPermission(["SUPER_ADMIN", "ADMIN_SIMPLE"]);
 
     // Find all non-terminal recommandations that are past their deadline
     const overdue = await prisma.recommandation.findMany({
@@ -526,6 +532,55 @@ export async function detectLateRecommandations(): Promise<
         error instanceof Error
           ? error.message
           : "Erreur lors de la detection des retards",
+    };
+  }
+}
+
+// ======================== UPDATE TAUX MISE EN OEUVRE ========================
+
+export async function updateTauxMiseEnOeuvre(
+  id: string,
+  taux: number
+): Promise<ActionResult<void>> {
+  try {
+    const session = await checkActionPermission([
+      "SUPER_ADMIN",
+      "ADMIN_SIMPLE",
+      "RESPONSABLE_ANTENNE",
+      "ADMIN_ANTENNE",
+    ]);
+
+    if (taux < 0 || taux > 100) {
+      return { success: false, error: "Le taux doit etre entre 0 et 100" };
+    }
+
+    const reco = await prisma.recommandation.findUnique({ where: { id } });
+    if (!reco) return { success: false, error: "Recommandation introuvable" };
+
+    await prisma.recommandation.update({
+      where: { id },
+      data: {
+        tauxMiseEnOeuvre: taux,
+        // Auto-update statut si 100%
+        ...(taux === 100 && reco.statut !== "RESOLUE"
+          ? { statut: "RESOLUE", dateResolution: new Date() }
+          : {}),
+      },
+    });
+
+    await createAuditLog({
+      action: "UPDATE",
+      entite: "Recommandation",
+      entiteId: id,
+      userId: session.id,
+      details: JSON.stringify({ tauxMiseEnOeuvre: taux }),
+    });
+
+    return { success: true, data: undefined };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur",
     };
   }
 }
