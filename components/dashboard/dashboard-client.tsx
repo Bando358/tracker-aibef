@@ -23,6 +23,11 @@ import {
   FileClock,
   FileX2,
   BarChart3,
+  Plane,
+  GraduationCap,
+  Star,
+  Briefcase,
+  Award,
 } from "lucide-react";
 import {
   Card,
@@ -41,11 +46,15 @@ import {
   PRIORITE_LABELS,
   TYPE_CONGE_LABELS,
   STATUT_CONGE_LABELS,
+  STATUT_MISSION_LABELS,
 } from "@/lib/constants";
 import type {
   DashboardData,
   CongeItem,
   RetardItem,
+  MissionsData,
+  FormationsData,
+  EvaluationsData,
 } from "@/lib/actions/dashboard.actions";
 import {
   ResponsiveContainer,
@@ -87,7 +96,7 @@ const tooltipStyle = {
 };
 
 export function DashboardClient({ data, role }: DashboardClientProps) {
-  const { kpis, pointageSummary, congesData, retardsData } = data;
+  const { kpis, pointageSummary, congesData, retardsData, missionsData, formationsData, evaluationsData } = data;
   const isEmployee = role === "PERSONNEL";
   const isManager = role === "SUPER_ADMIN" || role === "ADMIN_SIMPLE" || role === "RESPONSABLE_ANTENNE" || role === "ADMIN_ANTENNE";
 
@@ -218,7 +227,7 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
         </div>
 
         <Tabs defaultValue="activites" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-auto gap-2 rounded-xl bg-background/80 p-1.5 shadow-sm border border-border/50 sm:gap-3">
+          <TabsList className="grid w-full grid-cols-2 h-auto gap-2 rounded-xl bg-background/80 p-1.5 shadow-sm border border-border/50 sm:gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {/* Tab Activites */}
             <TabsTrigger
               value="activites"
@@ -326,6 +335,102 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
                   <div className="flex flex-1 items-center justify-center gap-1 rounded bg-red-50 py-0.5 dark:bg-red-900/20">
                     <UserX className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
                     <span className="text-[10px] font-medium text-red-700 dark:text-red-400">{retardsData.totalAbsencesMois} abs</span>
+                  </div>
+                </div>
+              </div>
+            </TabsTrigger>
+
+            {/* Tab Missions */}
+            <TabsTrigger
+              value="missions"
+              className="group/tab relative overflow-hidden rounded-lg p-0 text-left shadow-none transition-all duration-300 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-teal-500/10 data-[state=inactive]:hover:bg-accent/50"
+            >
+              <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-teal-500 via-teal-400 to-emerald-400 opacity-0 transition-opacity duration-300 group-data-[state=active]/tab:opacity-100" />
+              <div className="relative flex flex-col gap-1.5 px-3 py-2.5 sm:px-4 sm:py-3">
+                <div className="flex w-full items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-teal-100 p-1.5 transition-all duration-300 dark:bg-teal-900/40 group-data-[state=active]/tab:bg-teal-500 group-data-[state=active]/tab:shadow-sm group-data-[state=active]/tab:shadow-teal-500/25 dark:group-data-[state=active]/tab:bg-teal-500">
+                      <Plane className="h-3.5 w-3.5 text-teal-600 transition-colors duration-300 dark:text-teal-400 group-data-[state=active]/tab:text-white" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-semibold">Missions</span>
+                      <p className="hidden text-[10px] text-muted-foreground sm:block">Deplacements terrain</p>
+                    </div>
+                  </div>
+                  <span className="text-base font-bold text-teal-600 dark:text-teal-400 sm:text-lg">{missionsData.total}</span>
+                </div>
+                <div className="flex gap-1">
+                  <div className="flex flex-1 items-center justify-center gap-1 rounded bg-teal-50 py-0.5 dark:bg-teal-900/20">
+                    <Briefcase className="h-2.5 w-2.5 text-teal-600 dark:text-teal-400" />
+                    <span className="text-[10px] font-medium text-teal-700 dark:text-teal-400">{missionsData.enCours} en cours</span>
+                  </div>
+                  <div className="flex flex-1 items-center justify-center gap-1 rounded bg-emerald-50 py-0.5 dark:bg-emerald-900/20">
+                    <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">{missionsData.realisees} done</span>
+                  </div>
+                </div>
+              </div>
+            </TabsTrigger>
+
+            {/* Tab Formations */}
+            <TabsTrigger
+              value="formations"
+              className="group/tab relative overflow-hidden rounded-lg p-0 text-left shadow-none transition-all duration-300 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-purple-500/10 data-[state=inactive]:hover:bg-accent/50"
+            >
+              <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-purple-500 via-purple-400 to-violet-400 opacity-0 transition-opacity duration-300 group-data-[state=active]/tab:opacity-100" />
+              <div className="relative flex flex-col gap-1.5 px-3 py-2.5 sm:px-4 sm:py-3">
+                <div className="flex w-full items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-purple-100 p-1.5 transition-all duration-300 dark:bg-purple-900/40 group-data-[state=active]/tab:bg-purple-500 group-data-[state=active]/tab:shadow-sm group-data-[state=active]/tab:shadow-purple-500/25 dark:group-data-[state=active]/tab:bg-purple-500">
+                      <GraduationCap className="h-3.5 w-3.5 text-purple-600 transition-colors duration-300 dark:text-purple-400 group-data-[state=active]/tab:text-white" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-semibold">Formations</span>
+                      <p className="hidden text-[10px] text-muted-foreground sm:block">Renforcement capacites</p>
+                    </div>
+                  </div>
+                  <span className="text-base font-bold text-purple-600 dark:text-purple-400 sm:text-lg">{formationsData.total}</span>
+                </div>
+                <div className="flex gap-1">
+                  <div className="flex flex-1 items-center justify-center gap-1 rounded bg-purple-50 py-0.5 dark:bg-purple-900/20">
+                    <Users className="h-2.5 w-2.5 text-purple-600 dark:text-purple-400" />
+                    <span className="text-[10px] font-medium text-purple-700 dark:text-purple-400">{formationsData.totalParticipants} part.</span>
+                  </div>
+                  <div className="flex flex-1 items-center justify-center gap-1 rounded bg-violet-50 py-0.5 dark:bg-violet-900/20">
+                    <Award className="h-2.5 w-2.5 text-violet-600 dark:text-violet-400" />
+                    <span className="text-[10px] font-medium text-violet-700 dark:text-violet-400">{formationsData.attestationsDelivrees} att.</span>
+                  </div>
+                </div>
+              </div>
+            </TabsTrigger>
+
+            {/* Tab Evaluations */}
+            <TabsTrigger
+              value="evaluations"
+              className="group/tab relative overflow-hidden rounded-lg p-0 text-left shadow-none transition-all duration-300 data-[state=active]:bg-card data-[state=active]:shadow-md data-[state=active]:shadow-orange-500/10 data-[state=inactive]:hover:bg-accent/50"
+            >
+              <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-400 opacity-0 transition-opacity duration-300 group-data-[state=active]/tab:opacity-100" />
+              <div className="relative flex flex-col gap-1.5 px-3 py-2.5 sm:px-4 sm:py-3">
+                <div className="flex w-full items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-orange-100 p-1.5 transition-all duration-300 dark:bg-orange-900/40 group-data-[state=active]/tab:bg-orange-500 group-data-[state=active]/tab:shadow-sm group-data-[state=active]/tab:shadow-orange-500/25 dark:group-data-[state=active]/tab:bg-orange-500">
+                      <Star className="h-3.5 w-3.5 text-orange-600 transition-colors duration-300 dark:text-orange-400 group-data-[state=active]/tab:text-white" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-semibold">Evaluations</span>
+                      <p className="hidden text-[10px] text-muted-foreground sm:block">Performance employes</p>
+                    </div>
+                  </div>
+                  <span className="text-base font-bold text-orange-600 dark:text-orange-400 sm:text-lg">{evaluationsData.total}</span>
+                </div>
+                <div className="flex gap-1">
+                  <div className="flex flex-1 items-center justify-center gap-1 rounded bg-orange-50 py-0.5 dark:bg-orange-900/20">
+                    <FileClock className="h-2.5 w-2.5 text-orange-600 dark:text-orange-400" />
+                    <span className="text-[10px] font-medium text-orange-700 dark:text-orange-400">{evaluationsData.soumises} soum.</span>
+                  </div>
+                  <div className="flex flex-1 items-center justify-center gap-1 rounded bg-emerald-50 py-0.5 dark:bg-emerald-900/20">
+                    <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">{evaluationsData.validees} val.</span>
                   </div>
                 </div>
               </div>
@@ -525,6 +630,184 @@ export function DashboardClient({ data, role }: DashboardClientProps) {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* TAB: Missions */}
+          <TabsContent value="missions" className="space-y-6 animate-fade-in">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
+              <StatCard title="Total missions" value={missionsData.total} description="Missions enregistrees" icon={Plane} variant="default" />
+              <StatCard title="En cours" value={missionsData.enCours} description="Missions actives" icon={Briefcase} variant={missionsData.enCours > 0 ? "warning" : "default"} />
+              <StatCard title="Realisees" value={missionsData.realisees} description="Missions terminees" icon={CheckCircle2} variant="success" />
+              <StatCard title="En retard" value={missionsData.enRetard} description="Depassement echeance" icon={AlertTriangle} variant={missionsData.enRetard > 0 ? "danger" : "default"} />
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <Card className="overflow-hidden border-teal-200/50 bg-gradient-to-br from-teal-50/60 to-emerald-50/40 shadow-sm dark:border-teal-800/30 dark:from-teal-950/30 dark:to-emerald-950/20">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-teal-900/50">
+                      <BarChart3 className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-sm font-semibold">Missions par statut</CardTitle>
+                      <p className="text-xs text-muted-foreground">Repartition actuelle</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {missionsData.missionsByStatus.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={missionsData.missionsByStatus} barCategoryGap="25%">
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(var(--accent))", radius: 8 }} />
+                        <Bar dataKey="value" name="Missions" fill="hsl(160, 60%, 45%)" radius={[8, 8, 0, 0]}>
+                          <LabelList dataKey="value" position="top" style={{ fontSize: 11, fontWeight: 600, fill: "hsl(var(--foreground))" }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <EmptyState text="Aucune mission enregistree" />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden border-teal-200/50 bg-gradient-to-br from-teal-50/60 to-emerald-50/40 shadow-sm dark:border-teal-800/30 dark:from-teal-950/30 dark:to-emerald-950/20">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-teal-900/50">
+                      <Plane className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <CardTitle className="text-sm font-semibold">Missions recentes</CardTitle>
+                  </div>
+                  <Link href="/missions" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                    Tout voir <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  {missionsData.recentMissions.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {missionsData.recentMissions.map((m) => (
+                        <div key={m.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3.5 transition-all duration-200 hover:border-teal-200 hover:bg-accent/50 dark:hover:border-teal-800">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{m.objet}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {m.lieu} &middot; {m.responsableNom} &middot; {formatDateFr(m.dateDebut)} - {formatDateFr(m.dateFin)}
+                            </p>
+                          </div>
+                          <StatusBadge status={m.statut} label={STATUT_MISSION_LABELS[m.statut] ?? m.statut} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState text="Aucune mission recente" />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* TAB: Formations */}
+          <TabsContent value="formations" className="space-y-6 animate-fade-in">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
+              <StatCard title="Total formations" value={formationsData.total} description="Formations enregistrees" icon={GraduationCap} variant="default" />
+              <StatCard title="Participants" value={formationsData.totalParticipants} description="Total participants" icon={Users} />
+              <StatCard title="Attestations" value={formationsData.attestationsDelivrees} description="Attestations delivrees" icon={Award} variant="success" />
+              <StatCard title="En cours" value={formationsData.formationsEnCours} description="Formations actives" icon={Clock} variant={formationsData.formationsEnCours > 0 ? "warning" : "default"} />
+            </div>
+
+            <Card className="overflow-hidden border-purple-200/50 bg-gradient-to-br from-purple-50/60 to-violet-50/40 shadow-sm dark:border-purple-800/30 dark:from-purple-950/30 dark:to-violet-950/20">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-purple-900/50">
+                    <GraduationCap className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <CardTitle className="text-sm font-semibold">Formations recentes</CardTitle>
+                </div>
+                <Link href="/formations" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                  Tout voir <ArrowRight className="h-3 w-3" />
+                </Link>
+              </CardHeader>
+              <CardContent>
+                {formationsData.recentFormations.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {formationsData.recentFormations.map((f) => (
+                      <div key={f.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3.5 transition-all duration-200 hover:border-purple-200 hover:bg-accent/50 dark:hover:border-purple-800">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{f.titre}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {f.organisme && <span>{f.organisme} &middot; </span>}
+                            {formatDateFr(f.dateDebut)} - {formatDateFr(f.dateFin)}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                          {f.nbParticipants} part.
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState text="Aucune formation recente" />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB: Evaluations */}
+          <TabsContent value="evaluations" className="space-y-6 animate-fade-in">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
+              <StatCard title="Total evaluations" value={evaluationsData.total} description="Evaluations enregistrees" icon={Star} variant="default" />
+              <StatCard title="Brouillons" value={evaluationsData.brouillons} description="En cours de redaction" icon={FileClock} variant={evaluationsData.brouillons > 0 ? "warning" : "default"} />
+              <StatCard title="Soumises" value={evaluationsData.soumises} description="En attente de validation" icon={FileCheck2} />
+              <StatCard title="Validees" value={evaluationsData.validees} description="Evaluations finalisees" icon={CheckCircle2} variant="success" />
+            </div>
+
+            {evaluationsData.moyenneNote > 0 && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <StatCard title="Moyenne des notes" value={evaluationsData.moyenneNote.toFixed(1)} description="Note moyenne globale" icon={Star} variant={evaluationsData.moyenneNote >= 3 ? "success" : "warning"} />
+              </div>
+            )}
+
+            <Card className="overflow-hidden border-orange-200/50 bg-gradient-to-br from-orange-50/60 to-yellow-50/40 shadow-sm dark:border-orange-800/30 dark:from-orange-950/30 dark:to-yellow-950/20">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="rounded-xl bg-white p-2 shadow-sm dark:bg-orange-900/50">
+                    <Star className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <CardTitle className="text-sm font-semibold">Evaluations recentes</CardTitle>
+                </div>
+                <Link href="/evaluations" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                  Tout voir <ArrowRight className="h-3 w-3" />
+                </Link>
+              </CardHeader>
+              <CardContent>
+                {evaluationsData.recentEvaluations.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {evaluationsData.recentEvaluations.map((e) => (
+                      <div key={e.id} className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3.5 transition-all duration-200 hover:border-orange-200 hover:bg-accent/50 dark:hover:border-orange-800">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium">{e.employePrenom} {e.employeNom}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {e.periode} &middot; {e.statut}
+                          </p>
+                        </div>
+                        <div className="ml-3 flex items-center gap-2">
+                          {e.noteGlobale !== null && (
+                            <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                              {e.noteGlobale}/5
+                            </Badge>
+                          )}
+                          <StatusBadge status={e.statut} label={e.statut} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState text="Aucune evaluation recente" />
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

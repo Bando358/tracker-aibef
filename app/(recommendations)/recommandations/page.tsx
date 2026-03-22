@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { ClipboardCheck } from "lucide-react";
 import { getAllRecommandations } from "@/lib/actions/recommandation.actions";
+import { getAllAntennes } from "@/lib/actions/antenne.actions";
 import { RecommandationList } from "@/components/recommandations/recommandation-list";
 import { PAGINATION_DEFAULT } from "@/lib/constants";
 
@@ -12,10 +13,11 @@ export const metadata: Metadata = {
 };
 
 export default async function RecommandationsPage() {
-  const result = await getAllRecommandations({
-    page: 1,
-    pageSize: PAGINATION_DEFAULT,
-  });
+  const [result, antennesResult] = await Promise.all([
+    getAllRecommandations({ page: 1, pageSize: PAGINATION_DEFAULT }),
+    getAllAntennes({ pageSize: 100 }),
+  ]);
+  const antennes = antennesResult.data.map((a) => ({ id: a.id, nom: a.nom }));
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -41,6 +43,7 @@ export default async function RecommandationsPage() {
       <RecommandationList
         initialData={JSON.parse(JSON.stringify(result.data))}
         initialTotal={result.total}
+        antennes={antennes}
       />
     </div>
   );

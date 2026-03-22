@@ -21,7 +21,7 @@ export const recommandationSchema = z
       error: "La date d'echeance est requise",
     }),
     frequence: z
-      .enum(["MENSUELLE", "TRIMESTRIELLE", "ANNUELLE"])
+      .enum(["MENSUELLE", "BIMENSUELLE", "BIMESTRIELLE", "TRIMESTRIELLE", "SEMESTRIELLE", "ANNUELLE"])
       .optional()
       .nullable(),
     activiteId: z
@@ -41,13 +41,13 @@ export const recommandationSchema = z
   })
   .refine(
     (data) => {
-      if (data.typeResolution === "PERIODIQUE" && !data.frequence) {
+      if ((data.typeResolution === "PERIODIQUE" || data.typeResolution === "PERMANENTE") && !data.frequence) {
         return false;
       }
       return true;
     },
     {
-      message: "La frequence est requise pour une resolution periodique",
+      message: "La frequence de revision est requise pour une resolution permanente ou periodique",
       path: ["frequence"],
     }
   );

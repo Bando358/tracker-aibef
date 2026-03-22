@@ -299,9 +299,10 @@ export function ActiviteForm({ initialData, onSuccess }: ActiviteFormProps) {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="MENSUELLE">Mensuelle</SelectItem>
-                          <SelectItem value="TRIMESTRIELLE">
-                            Trimestrielle
-                          </SelectItem>
+                          <SelectItem value="BIMENSUELLE">Bimensuelle (tous les 2 mois)</SelectItem>
+                          <SelectItem value="BIMESTRIELLE">Bimestrielle (2 fois par mois)</SelectItem>
+                          <SelectItem value="TRIMESTRIELLE">Trimestrielle</SelectItem>
+                          <SelectItem value="SEMESTRIELLE">Semestrielle</SelectItem>
                           <SelectItem value="ANNUELLE">Annuelle</SelectItem>
                         </SelectContent>
                       </Select>

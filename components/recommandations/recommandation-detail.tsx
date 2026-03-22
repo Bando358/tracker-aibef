@@ -108,7 +108,10 @@ const TYPE_RESOLUTION_LABELS: Record<string, string> = {
 
 const FREQUENCE_LABELS: Record<string, string> = {
   MENSUELLE: "Mensuelle",
+  BIMENSUELLE: "Bimensuelle",
+  BIMESTRIELLE: "Bimestrielle",
   TRIMESTRIELLE: "Trimestrielle",
+  SEMESTRIELLE: "Semestrielle",
   ANNUELLE: "Annuelle",
 };
 
@@ -119,6 +122,7 @@ const AVAILABLE_STATUTS: {
   { value: "EN_ATTENTE", label: "En attente" },
   { value: "EN_COURS", label: "En cours" },
   { value: "PARTIELLEMENT_REALISEE", label: "Partiellement realisee" },
+  { value: "RESOLUE", label: "Resolue (mise en oeuvre)" },
   { value: "ANNULEE", label: "Annulee" },
 ];
 
@@ -358,6 +362,28 @@ export function RecommandationDetail({
             </CardContent>
           </Card>
 
+          {/* Bandeau revue periodique */}
+          {(recommandation.typeResolution === "PERMANENTE" || recommandation.typeResolution === "PERIODIQUE") && recommandation.frequence && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800/40 p-4">
+              <div className="flex items-start gap-3">
+                <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-medium text-blue-900 dark:text-blue-200">
+                    Recommandation a revue {FREQUENCE_LABELS[recommandation.frequence]?.toLowerCase() ?? recommandation.frequence}
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    Cette recommandation de type <strong>{TYPE_RESOLUTION_LABELS[recommandation.typeResolution]?.toLowerCase()}</strong> est
+                    automatiquement remise en &quot;En attente&quot; a chaque nouvelle periode
+                    ({
+                      ({ BIMESTRIELLE: "2 fois par mois", MENSUELLE: "chaque mois", BIMENSUELLE: "tous les 2 mois", TRIMESTRIELLE: "chaque trimestre", SEMESTRIELLE: "chaque semestre", ANNUELLE: "chaque annee" } as Record<string, string>)[recommandation.frequence ?? ""] ?? recommandation.frequence
+                    }).
+                    Le statut doit etre revu et mis a jour par le responsable.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Responsables Card */}
           <Card className="border-border/60 shadow-sm">
             <CardHeader className="pb-3">
@@ -477,13 +503,12 @@ export function RecommandationDetail({
         {/* Sidebar actions */}
         <div className="space-y-6">
           {/* Status change controls */}
-          {!isTerminal && (
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  Changer le statut
-                </CardTitle>
-              </CardHeader>
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">
+                Changer le statut
+              </CardTitle>
+            </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Nouveau statut</Label>
@@ -536,7 +561,6 @@ export function RecommandationDetail({
                 </Button>
               </CardContent>
             </Card>
-          )}
 
           {/* Resolve button / form */}
           {!isTerminal && (

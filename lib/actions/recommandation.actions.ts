@@ -62,6 +62,9 @@ export async function getAllRecommandations(
     statut?: StatutRecommandation;
     priorite?: Priorite;
     source?: SourceRecommandation;
+    antenneId?: string;
+    typeResolution?: string;
+    frequence?: string;
   }
 ): Promise<PaginatedResult<RecommandationListItem>> {
   const user = await getSessionUser();
@@ -87,6 +90,9 @@ export async function getAllRecommandations(
   if (params.statut) where.statut = params.statut;
   if (params.priorite) where.priorite = params.priorite;
   if (params.source) where.source = params.source;
+  if (params.antenneId) where.antenneId = params.antenneId;
+  if (params.typeResolution) where.typeResolution = params.typeResolution;
+  if (params.frequence) where.frequence = params.frequence;
 
   if (params.search) {
     where.OR = [
@@ -583,4 +589,125 @@ export async function updateTauxMiseEnOeuvre(
       error: error instanceof Error ? error.message : "Erreur",
     };
   }
+}
+
+// ======================== RESET PERIODIQUE DES RECOMMANDATIONS ========================
+
+/**
+ * Reinitialise le statut des recommandations PERMANENTE et PERIODIQUE
+ * dont la periode est ecoulee (mensuelle ou trimestrielle).
+ * - PERMANENTE : revue chaque mois (si frequence MENSUELLE) ou chaque trimestre (si TRIMESTRIELLE)
+ * - PERIODIQUE : idem, selon la frequence definie
+ * - PONCTUELLE : pas de reset
+ *
+ * Les recommandations RESOLUE sont remises en EN_ATTENTE avec historique.
+ * Les recommandations ANNULEE ne sont pas touchees.
+ *
+ * Appelee automatiquement par le cron /api/cron.
+ */
+export async function resetRecommandationsPeriodiques(): Promise<{
+  resetCount: number;
+  errors: string[];
+}> {
+  const now = new Date();
+  const currentMonth = now.getMonth(); // 0-11
+  const currentYear = now.getFullYear();
+
+  // Recuperer les recommandations permanentes et periodiques non annulees
+  const recommandations = await prisma.recommandation.findMany({
+    where: {
+      typeResolution: { in: ["PERMANENTE", "PERIODIQUE"] },
+      frequence: { not: null },
+      statut: { not: "ANNULEE" },
+    },
+    select: {
+      id: true,
+      titre: true,
+      typeResolution: true,
+      frequence: true,
+      statut: true,
+      dernierResetPeriode: true,
+      createdAt: true,
+    },
+  });
+
+  let resetCount = 0;
+  const errors: string[] = [];
+
+  for (const reco of recommandations) {
+    try {
+      const lastReset = reco.dernierResetPeriode ?? reco.createdAt;
+      const lastResetMonth = lastReset.getMonth();
+      const lastResetYear = lastReset.getFullYear();
+
+      let shouldReset = false;
+
+      // Calculer le nombre de mois ecoules depuis le dernier reset
+      const monthsElapsed =
+        (currentYear - lastResetYear) * 12 + (currentMonth - lastResetMonth);
+
+      if (reco.frequence === "BIMESTRIELLE") {
+        // 2 fois par mois: reset si au moins 15 jours ecoules
+        const daysDiff = Math.floor(
+          (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        shouldReset = daysDiff >= 15;
+      } else if (reco.frequence === "MENSUELLE") {
+        shouldReset = monthsElapsed >= 1;
+      } else if (reco.frequence === "BIMENSUELLE") {
+        // Tous les 2 mois
+        shouldReset = monthsElapsed >= 2;
+      } else if (reco.frequence === "TRIMESTRIELLE") {
+        shouldReset = monthsElapsed >= 3;
+      } else if (reco.frequence === "SEMESTRIELLE") {
+        shouldReset = monthsElapsed >= 6;
+      } else if (reco.frequence === "ANNUELLE") {
+        shouldReset = monthsElapsed >= 12;
+      }
+
+      if (!shouldReset) continue;
+
+      // Ne reset que si le statut n'est pas deja EN_ATTENTE
+      if (reco.statut === "EN_ATTENTE") {
+        // Mettre a jour la date de reset sans changer le statut
+        await prisma.recommandation.update({
+          where: { id: reco.id },
+          data: { dernierResetPeriode: now },
+        });
+        continue;
+      }
+
+      const ancienStatut = reco.statut;
+
+      await prisma.$transaction([
+        prisma.recommandation.update({
+          where: { id: reco.id },
+          data: {
+            statut: "EN_ATTENTE",
+            tauxMiseEnOeuvre: 0,
+            dernierResetPeriode: now,
+          },
+        }),
+        prisma.recommandationHistorique.create({
+          data: {
+            recommandationId: reco.id,
+            ancienStatut: ancienStatut,
+            nouveauStatut: "EN_ATTENTE",
+            commentaire: `Reset periodique automatique (${
+              ({ BIMESTRIELLE: "bimestriel", MENSUELLE: "mensuel", BIMENSUELLE: "bimensuel", TRIMESTRIELLE: "trimestriel", SEMESTRIELLE: "semestriel", ANNUELLE: "annuel" } as Record<string, string>)[reco.frequence ?? ""] ?? reco.frequence
+            }) - nouvelle periode de revue`,
+            modifiePar: "SYSTEME",
+          },
+        }),
+      ]);
+
+      resetCount++;
+    } catch (err) {
+      errors.push(
+        `${reco.titre}: ${err instanceof Error ? err.message : "Erreur"}`
+      );
+    }
+  }
+
+  return { resetCount, errors };
 }

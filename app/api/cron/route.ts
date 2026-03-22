@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { executeRelances } from "@/lib/actions/relance.actions";
 import { detectLateActivites } from "@/lib/actions/activite.actions";
+import { resetRecommandationsPeriodiques } from "@/lib/actions/recommandation.actions";
 
 export async function GET(request: Request) {
   // Verification par cle API
@@ -12,15 +13,17 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [relances, lateResult] = await Promise.all([
+    const [relances, lateResult, resetResult] = await Promise.all([
       executeRelances(),
       detectLateActivites(),
+      resetRecommandationsPeriodiques(),
     ]);
 
     return NextResponse.json({
       success: true,
       relances,
       lateActivites: lateResult.success ? lateResult.data : null,
+      recommandationsReset: resetResult,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

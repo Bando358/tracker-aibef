@@ -26,7 +26,10 @@ enum TypeActivite {
 
 enum Frequence {
   MENSUELLE
+  BIMENSUELLE
+  BIMESTRIELLE
   TRIMESTRIELLE
+  SEMESTRIELLE
   ANNUELLE
 }
 
@@ -371,8 +374,9 @@ model Recommandation {
   dateEcheance   DateTime
   dateResolution    DateTime?
   frequence         Frequence?
-  tauxMiseEnOeuvre  Int            @default(0)
-  observations      String?
+  tauxMiseEnOeuvre    Int            @default(0)
+  observations        String?
+  dernierResetPeriode DateTime?
 
   activiteId String?
   activite   Activite? @relation(fields: [activiteId], references: [id])

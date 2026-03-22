@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FolderKanban, Plus } from "lucide-react";
-import { getAllProjets } from "@/lib/actions/projet.actions";
+import { getAllProjets, getProjetFilterOptions } from "@/lib/actions/projet.actions";
+import { getAllAntennes } from "@/lib/actions/antenne.actions";
 import { ProjetList } from "@/components/projets/projet-list";
 import { Button } from "@/components/ui/button";
 
@@ -11,7 +12,12 @@ export const metadata = {
 };
 
 export default async function ProjetsPage() {
-  const initialData = await getAllProjets({ page: 1 });
+  const [initialData, filterOptions, antennesResult] = await Promise.all([
+    getAllProjets({ page: 1 }),
+    getProjetFilterOptions(),
+    getAllAntennes({ pageSize: 100 }),
+  ]);
+  const antennes = antennesResult.data.map((a) => ({ id: a.id, nom: a.nom }));
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -46,7 +52,12 @@ export default async function ProjetsPage() {
           </Button>
         </div>
       </div>
-      <ProjetList initialData={initialData} />
+      <ProjetList
+        initialData={initialData}
+        bailleurs={filterOptions.bailleurs}
+        typesFonds={filterOptions.typesFonds}
+        antennes={antennes}
+      />
     </div>
   );
 }

@@ -26,6 +26,9 @@ export interface DashboardData {
   pointageSummary: PointageSummary | null;
   congesData: CongesData;
   retardsData: RetardsData;
+  missionsData: MissionsData;
+  formationsData: FormationsData;
+  evaluationsData: EvaluationsData;
 }
 
 export interface RecentActivite {
@@ -90,6 +93,54 @@ export interface RetardsData {
   employesAvecRetard: number;
   recentRetards: RetardItem[];
   retardsByDay: ChartDataPoint[];
+}
+
+export interface MissionsData {
+  total: number;
+  enCours: number;
+  realisees: number;
+  enRetard: number;
+  missionsByStatus: ChartDataPoint[];
+  recentMissions: Array<{
+    id: string;
+    objet: string;
+    lieu: string;
+    statut: string;
+    dateDebut: string;
+    dateFin: string;
+    responsableNom: string;
+  }>;
+}
+
+export interface FormationsData {
+  total: number;
+  totalParticipants: number;
+  attestationsDelivrees: number;
+  formationsEnCours: number;
+  recentFormations: Array<{
+    id: string;
+    titre: string;
+    organisme: string | null;
+    dateDebut: string;
+    dateFin: string;
+    nbParticipants: number;
+  }>;
+}
+
+export interface EvaluationsData {
+  total: number;
+  brouillons: number;
+  soumises: number;
+  validees: number;
+  moyenneNote: number;
+  recentEvaluations: Array<{
+    id: string;
+    periode: string;
+    statut: string;
+    noteGlobale: number | null;
+    employeNom: string;
+    employePrenom: string;
+  }>;
 }
 
 // Inline shapes for Prisma query results to avoid implicit any
@@ -390,6 +441,252 @@ async function fetchRetardsData(
   };
 }
 
+// ======================== MISSIONS DATA ========================
+
+const STATUT_MISSION_LABELS: Record<string, string> = {
+  PLANIFIEE: "Planifiée",
+  EN_COURS: "En cours",
+  TERMINEE: "Terminée",
+  ANNULEE: "Annulée",
+};
+
+async function fetchMissionsData(
+  whereFilter: Record<string, unknown> | undefined
+): Promise<MissionsData> {
+  const now = new Date();
+  const missionFilter = whereFilter ?? {};
+
+  const [total, enCours, terminees, annulees, allMissions, recentMissionsRaw] =
+    await Promise.all([
+      prisma.mission.count({ where: missionFilter }),
+      prisma.mission.count({
+        where: { ...missionFilter, statut: "EN_COURS" },
+      }),
+      prisma.mission.count({
+        where: { ...missionFilter, statut: "TERMINEE" },
+      }),
+      prisma.mission.count({
+        where: { ...missionFilter, statut: "ANNULEE" },
+      }),
+      prisma.mission.findMany({
+        where: missionFilter,
+        select: { statut: true },
+      }),
+      prisma.mission.findMany({
+        where: missionFilter,
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          objet: true,
+          lieu: true,
+          statut: true,
+          dateDebut: true,
+          dateFin: true,
+          responsable: { select: { nom: true, prenom: true } },
+        },
+      }),
+    ]);
+
+  // Count missions en retard: PLANIFIEE or EN_COURS with dateFin in the past
+  const enRetard = await prisma.mission.count({
+    where: {
+      ...missionFilter,
+      statut: { in: ["PLANIFIEE", "EN_COURS"] },
+      dateFin: { lt: now },
+    },
+  });
+
+  // Group by status for chart
+  const statusMap: Record<string, number> = {};
+  for (const m of allMissions) {
+    const s = m.statut as string;
+    statusMap[s] = (statusMap[s] || 0) + 1;
+  }
+  const missionsByStatus: ChartDataPoint[] = Object.entries(statusMap).map(
+    ([statut, count]) => ({
+      name: STATUT_MISSION_LABELS[statut] || statut,
+      value: count,
+    })
+  );
+
+  const recentMissions = recentMissionsRaw.map(
+    (m: {
+      id: string;
+      objet: string;
+      lieu: string;
+      statut: string;
+      dateDebut: Date;
+      dateFin: Date;
+      responsable: { nom: string; prenom: string };
+    }) => ({
+      id: m.id,
+      objet: m.objet,
+      lieu: m.lieu,
+      statut: m.statut,
+      dateDebut: m.dateDebut.toISOString(),
+      dateFin: m.dateFin.toISOString(),
+      responsableNom: `${m.responsable.prenom} ${m.responsable.nom}`,
+    })
+  );
+
+  return {
+    total,
+    enCours,
+    realisees: terminees,
+    enRetard,
+    missionsByStatus,
+    recentMissions,
+  };
+}
+
+// ======================== FORMATIONS DATA ========================
+
+async function fetchFormationsData(
+  whereParticipant: Record<string, unknown> | undefined
+): Promise<FormationsData> {
+  const now = new Date();
+
+  // If scoped by antenne/user, we filter formations that have matching participants
+  const formationFilter = whereParticipant
+    ? { participants: { some: { user: whereParticipant } } }
+    : {};
+
+  const [total, formationsEnCours, totalParticipants, attestationsDelivrees, recentFormationsRaw] =
+    await Promise.all([
+      prisma.formation.count({ where: formationFilter }),
+      prisma.formation.count({
+        where: {
+          ...formationFilter,
+          dateDebut: { lte: now },
+          dateFin: { gte: now },
+        },
+      }),
+      prisma.formationParticipant.count({
+        where: whereParticipant ? { user: whereParticipant } : {},
+      }),
+      prisma.formationParticipant.count({
+        where: {
+          attestation: true,
+          ...(whereParticipant ? { user: whereParticipant } : {}),
+        },
+      }),
+      prisma.formation.findMany({
+        where: formationFilter,
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          titre: true,
+          organisme: true,
+          dateDebut: true,
+          dateFin: true,
+          _count: { select: { participants: true } },
+        },
+      }),
+    ]);
+
+  const recentFormations = recentFormationsRaw.map(
+    (f: {
+      id: string;
+      titre: string;
+      organisme: string | null;
+      dateDebut: Date;
+      dateFin: Date;
+      _count: { participants: number };
+    }) => ({
+      id: f.id,
+      titre: f.titre,
+      organisme: f.organisme,
+      dateDebut: f.dateDebut.toISOString(),
+      dateFin: f.dateFin.toISOString(),
+      nbParticipants: f._count.participants,
+    })
+  );
+
+  return {
+    total,
+    totalParticipants,
+    attestationsDelivrees,
+    formationsEnCours,
+    recentFormations,
+  };
+}
+
+// ======================== EVALUATIONS DATA ========================
+
+async function fetchEvaluationsData(
+  whereEmploye: Record<string, unknown> | undefined
+): Promise<EvaluationsData> {
+  const employeFilter = whereEmploye ? { employe: whereEmploye } : {};
+
+  const [total, brouillons, soumises, validees, valideesWithNotes, recentEvaluationsRaw] =
+    await Promise.all([
+      prisma.evaluationPerformance.count({ where: employeFilter }),
+      prisma.evaluationPerformance.count({
+        where: { ...employeFilter, statut: "BROUILLON" },
+      }),
+      prisma.evaluationPerformance.count({
+        where: { ...employeFilter, statut: "SOUMISE" },
+      }),
+      prisma.evaluationPerformance.count({
+        where: { ...employeFilter, statut: "VALIDEE" },
+      }),
+      prisma.evaluationPerformance.findMany({
+        where: { ...employeFilter, statut: "VALIDEE", noteGlobale: { not: null } },
+        select: { noteGlobale: true },
+      }),
+      prisma.evaluationPerformance.findMany({
+        where: employeFilter,
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          periode: true,
+          statut: true,
+          noteGlobale: true,
+          employe: { select: { nom: true, prenom: true } },
+        },
+      }),
+    ]);
+
+  // Calculate average note for validated evaluations
+  const moyenneNote =
+    valideesWithNotes.length > 0
+      ? valideesWithNotes.reduce(
+          (sum: number, e: { noteGlobale: number | null }) =>
+            sum + (e.noteGlobale ?? 0),
+          0
+        ) / valideesWithNotes.length
+      : 0;
+
+  const recentEvaluations = recentEvaluationsRaw.map(
+    (e: {
+      id: string;
+      periode: string;
+      statut: string;
+      noteGlobale: number | null;
+      employe: { nom: string; prenom: string };
+    }) => ({
+      id: e.id,
+      periode: e.periode,
+      statut: e.statut,
+      noteGlobale: e.noteGlobale,
+      employeNom: e.employe.nom,
+      employePrenom: e.employe.prenom,
+    })
+  );
+
+  return {
+    total,
+    brouillons,
+    soumises,
+    validees,
+    moyenneNote: Math.round(moyenneNote * 100) / 100,
+    recentEvaluations,
+  };
+}
+
 // ======================== MAIN FUNCTION ========================
 
 export async function fetchDashboardData(
@@ -428,6 +725,9 @@ async function fetchSuperAdminData(): Promise<DashboardData> {
     antennesWithCounts,
     congesData,
     retardsData,
+    missionsData,
+    formationsData,
+    evaluationsData,
   ] = await Promise.all([
     prisma.activite.count(),
     prisma.activite.count({ where: { statut: "REALISEE" } }),
@@ -479,6 +779,9 @@ async function fetchSuperAdminData(): Promise<DashboardData> {
     }),
     fetchCongesData(undefined),
     fetchRetardsData(undefined),
+    fetchMissionsData(undefined),
+    fetchFormationsData(undefined),
+    fetchEvaluationsData(undefined),
   ]);
 
   const kpis = computeKPIs({
@@ -552,6 +855,9 @@ async function fetchSuperAdminData(): Promise<DashboardData> {
     pointageSummary: null,
     congesData,
     retardsData,
+    missionsData,
+    formationsData,
+    evaluationsData,
   };
 }
 
@@ -581,6 +887,9 @@ async function fetchResponsableData(
     recentRecommandationsRaw,
     congesData,
     retardsData,
+    missionsData,
+    formationsData,
+    evaluationsData,
   ] = await Promise.all([
     prisma.activiteAntenne.count({ where: activiteAntenneWhere }),
     prisma.activiteAntenne.count({
@@ -645,6 +954,9 @@ async function fetchResponsableData(
     }),
     fetchCongesData({ antenneId }),
     fetchRetardsData({ antenneId }),
+    fetchMissionsData(undefined),
+    fetchFormationsData({ antenneId }),
+    fetchEvaluationsData({ antenneId }),
   ]);
 
   const kpis = computeKPIs({
@@ -711,6 +1023,9 @@ async function fetchResponsableData(
     pointageSummary: null,
     congesData,
     retardsData,
+    missionsData,
+    formationsData,
+    evaluationsData,
   };
 }
 
@@ -734,6 +1049,9 @@ async function fetchEmployeData(userId: string): Promise<DashboardData> {
     weekPointages,
     congesData,
     retardsData,
+    missionsData,
+    formationsData,
+    evaluationsData,
   ] = await Promise.all([
     prisma.activiteAntenne.count({ where: { responsableId: userId } }),
     prisma.activiteAntenne.count({
@@ -814,6 +1132,9 @@ async function fetchEmployeData(userId: string): Promise<DashboardData> {
     }),
     fetchCongesData({ id: userId }),
     fetchRetardsData({ id: userId }),
+    fetchMissionsData({ responsableId: userId }),
+    fetchFormationsData({ id: userId }),
+    fetchEvaluationsData({ id: userId }),
   ]);
 
   const kpis = computeKPIs({
@@ -896,6 +1217,9 @@ async function fetchEmployeData(userId: string): Promise<DashboardData> {
     pointageSummary,
     congesData,
     retardsData,
+    missionsData,
+    formationsData,
+    evaluationsData,
   };
 }
 
@@ -935,6 +1259,29 @@ function emptyDashboard(): DashboardData {
       employesAvecRetard: 0,
       recentRetards: [],
       retardsByDay: [],
+    },
+    missionsData: {
+      total: 0,
+      enCours: 0,
+      realisees: 0,
+      enRetard: 0,
+      missionsByStatus: [],
+      recentMissions: [],
+    },
+    formationsData: {
+      total: 0,
+      totalParticipants: 0,
+      attestationsDelivrees: 0,
+      formationsEnCours: 0,
+      recentFormations: [],
+    },
+    evaluationsData: {
+      total: 0,
+      brouillons: 0,
+      soumises: 0,
+      validees: 0,
+      moyenneNote: 0,
+      recentEvaluations: [],
     },
   };
 }

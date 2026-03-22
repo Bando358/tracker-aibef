@@ -23,6 +23,11 @@ export async function getAllProjets(params: {
   page?: number;
   pageSize?: number;
   activeOnly?: boolean;
+  bailleur?: string;
+  typeFonds?: string;
+  antenneId?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }): Promise<PaginatedResult<ProjetWithCount>> {
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? PAGINATION_DEFAULT;
@@ -39,15 +44,30 @@ export async function getAllProjets(params: {
       { nom: { contains: params.search, mode: "insensitive" } },
       { code: { contains: params.search, mode: "insensitive" } },
       { description: { contains: params.search, mode: "insensitive" } },
+      { bailleur: { contains: params.search, mode: "insensitive" } },
     ];
   }
+
+  if (params.bailleur) {
+    where.bailleur = params.bailleur;
+  }
+  if (params.typeFonds) {
+    where.typeFonds = params.typeFonds;
+  }
+  if (params.antenneId) {
+    where.antenneId = params.antenneId;
+  }
+
+  const sortField = params.sortBy ?? "code";
+  const sortOrder = params.sortOrder ?? "asc";
+  const orderBy: Record<string, string> = { [sortField]: sortOrder };
 
   const [data, total] = await Promise.all([
     prisma.projet.findMany({
       where,
       skip,
       take: pageSize,
-      orderBy: { code: "asc" },
+      orderBy,
       include: {
         _count: { select: { activites: true } },
         antenne: { select: { id: true, nom: true, code: true } },
@@ -62,6 +82,31 @@ export async function getAllProjets(params: {
     page,
     pageSize,
     totalPages: Math.ceil(total / pageSize),
+  };
+}
+
+export async function getProjetFilterOptions(): Promise<{
+  bailleurs: string[];
+  typesFonds: string[];
+}> {
+  const [bailleursRaw, typeFondsRaw] = await Promise.all([
+    prisma.projet.findMany({
+      where: { bailleur: { not: null }, isActive: true },
+      select: { bailleur: true },
+      distinct: ["bailleur"],
+      orderBy: { bailleur: "asc" },
+    }),
+    prisma.projet.findMany({
+      where: { typeFonds: { not: null }, isActive: true },
+      select: { typeFonds: true },
+      distinct: ["typeFonds"],
+      orderBy: { typeFonds: "asc" },
+    }),
+  ]);
+
+  return {
+    bailleurs: bailleursRaw.map((b) => b.bailleur!).filter(Boolean),
+    typesFonds: typeFondsRaw.map((t) => t.typeFonds!).filter(Boolean),
   };
 }
 

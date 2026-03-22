@@ -92,7 +92,10 @@ const PRIORITE_OPTIONS = [
 
 const FREQUENCE_OPTIONS = [
   { value: "MENSUELLE", label: "Mensuelle" },
+  { value: "BIMENSUELLE", label: "Bimensuelle (tous les 2 mois)" },
+  { value: "BIMESTRIELLE", label: "Bimestrielle (2 fois par mois)" },
   { value: "TRIMESTRIELLE", label: "Trimestrielle" },
+  { value: "SEMESTRIELLE", label: "Semestrielle" },
   { value: "ANNUELLE", label: "Annuelle" },
 ] as const;
 
@@ -183,7 +186,9 @@ export function RecommandationForm({
       const payload = {
         ...data,
         frequence:
-          data.typeResolution === "PERIODIQUE" ? data.frequence : null,
+          data.typeResolution === "PERIODIQUE" || data.typeResolution === "PERMANENTE"
+            ? data.frequence
+            : null,
       };
 
       const result = await createRecommandation(payload);
@@ -372,10 +377,10 @@ export function RecommandationForm({
               )}
             </div>
 
-            {/* Frequence (conditional) */}
-            {watchedTypeResolution === "PERIODIQUE" && (
+            {/* Frequence de revision (pour PERMANENTE et PERIODIQUE) */}
+            {(watchedTypeResolution === "PERIODIQUE" || watchedTypeResolution === "PERMANENTE") && (
               <div className="space-y-2">
-                <Label>Frequence *</Label>
+                <Label>Frequence de revision *</Label>
                 <Controller
                   control={control}
                   name="frequence"
